@@ -11,6 +11,22 @@ geod(mfd, x, y)
 
 \item{x, y}{single points or (n by ...) batches of points}
 }
+\value{
+a scalar (single point vs. single point), or a length-n vector if
+  either `x` or `y` (or both, paired) is a batch of n points
+}
 \description{
-Geodesic distance on a manifold
+Works identically for [manifold_bws()], [manifold_grassmann()], and
+[manifold_sphere()] objects, and for any combination of single points and
+batches of points (an (n by ...) array/matrix) in `x` and `y`.
+}
+\examples{
+mfd = manifold_sphere()
+x = c(1, 0, 0)
+y = c(0, 1, 0)
+geod(mfd, x, y)
+
+# one point vs. a batch of points
+X = rbind(c(1, 0, 0), c(0, 0, 1), c(0, 1, 0))
+geod(mfd, X, y)
 }

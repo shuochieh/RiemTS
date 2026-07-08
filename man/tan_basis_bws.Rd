@@ -15,3 +15,8 @@ An array of orthonormal basis (E), and an array of E passed through the Lyapunov
 \description{
 Computes a canonical basis for the tangent space at a point in BWS
 }
+\examples{
+Sigma = diag(3) + 0.1
+basis = tan_basis_bws(Sigma)
+dim(basis$E)           # 6 basis matrices (p*(p+1)/2), each 3 x 3
+}

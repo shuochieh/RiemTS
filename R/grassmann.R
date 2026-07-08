@@ -94,6 +94,15 @@ Log_core.manifold_grassmann = function(mfd, x, mu, ...) Log_gr_core(mu, x, p = m
 #'
 #' @param P base
 #' @param p rank of the projectors in the Grassmannian
+#' @return an (m by d by d) array of basis matrices, m = (d - p) * p
+#' @examples
+#' rand_projector = function(d, p) {
+#'   U = qr.Q(qr(matrix(rnorm(d * d), d, d)))[, 1:p, drop = FALSE]
+#'   U %*% t(U)
+#' }
+#' P = rand_projector(5, 2)
+#' basis = basis_gr(P, p = 2)
+#' dim(basis)   # 6 basis matrices (m = (5-2)*2), each 5 x 5
 #' @export
 basis_gr = function(P, p = NULL) {
   d = nrow(P)

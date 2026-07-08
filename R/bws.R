@@ -52,6 +52,10 @@ Log_core.manifold_bws = function(mfd, x, mu, ...) Log_BWS_core(x, mu)
 #'
 #' @param Sigma Base point
 #' @return An array of orthonormal basis (E), and an array of E passed through the Lyapunov operator
+#' @examples
+#' Sigma = diag(3) + 0.1
+#' basis = tan_basis_bws(Sigma)
+#' dim(basis$E)           # 6 basis matrices (p*(p+1)/2), each 3 x 3
 #' @export
 tan_basis_bws = function(Sigma) {
   p = dim(Sigma)[1]
@@ -91,6 +95,14 @@ tan_basis_bws = function(Sigma) {
 #' Express the tangent vector Log_M(x) in the canonical orthonormal basis
 #' returned by tan_basis_bws(). Thin wrapper around Log_map()/coords_from_basis().
 #'
+#' @param x an SPD matrix, or an (n by p by p) array of SPD matrices
+#' @param M base point (typically the Frechet mean)
+#' @param E_lyapunov optional precomputed basis from `tan_basis_bws(M)$E_lyapunov`
+#' @return a coordinate vector (or an n by p*(p+1)/2 matrix for a batch)
+#' @examples
+#' Sigma = diag(3) + 0.1
+#' X = matrix(rnorm(9), 3, 3); X = X %*% t(X) + diag(3)
+#' log_vec_construct(X, Sigma)
 #' @export
 log_vec_construct = function(x, M, E_lyapunov = NULL) {
   if (is.null(E_lyapunov)) {

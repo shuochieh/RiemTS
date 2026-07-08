@@ -16,5 +16,12 @@
 #' @param to end point
 #' @param v tangent vector at `from`
 #' @param ... manifold-specific extra arguments (e.g. `method` for manifold_bws())
+#' @return the transported tangent vector, at `to`
+#' @examples
+#' mfd = manifold_sphere()
+#' x = c(1, 0, 0)
+#' y = c(0, 1, 0)
+#' v = c(0, 0, 1)   # tangent to the sphere at x
+#' parallel_transport(mfd, x, y, v)
 #' @export
 parallel_transport = function(mfd, from, to, v, ...) UseMethod("parallel_transport")

@@ -11,6 +11,18 @@ basis_gr(P, p = NULL)
 
 \item{p}{rank of the projectors in the Grassmannian}
 }
+\value{
+an (m by d by d) array of basis matrices, m = (d - p) * p
+}
 \description{
 Generate a set of ONB at a given P
+}
+\examples{
+rand_projector = function(d, p) {
+  U = qr.Q(qr(matrix(rnorm(d * d), d, d)))[, 1:p, drop = FALSE]
+  U \%*\% t(U)
+}
+P = rand_projector(5, 2)
+basis = basis_gr(P, p = 2)
+dim(basis)   # 6 basis matrices (m = (5-2)*2), each 5 x 5
 }

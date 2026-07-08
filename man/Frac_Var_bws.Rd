@@ -22,6 +22,20 @@ Frac_Var_bws(
 
 \item{fraction}{whether to return fraction of variance unexplained or squared prediction errors}
 }
+\value{
+a length-r vector, the fraction of variance unexplained (or squared prediction error) using 1..r factors
+}
 \description{
 Computes evaluation metric for RFM on BWS
+}
+\examples{
+set.seed(1)
+n = 30; p = 3
+X = array(NA, dim = c(n, p, p))
+for (i in 1:n) {
+  A = matrix(rnorm(p * p), p, p)
+  X[i, , ] = A \%*\% t(A) + diag(p)
+}
+model = rfm_bws(X, r = 1, h = 3)
+Frac_Var_bws(X[1:5, , ], model, Euclidean_mean = model$mu_hat)
 }

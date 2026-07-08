@@ -6,6 +6,18 @@
 \usage{
 is_on_sphere(x, tol = 1e-06)
 }
+\arguments{
+\item{x}{a numeric vector}
+
+\item{tol}{tolerance on `|| x || - 1`}
+}
+\value{
+TRUE/FALSE
+}
 \description{
 Check if x is on the sphere (within some tolerance)
+}
+\examples{
+is_on_sphere(c(1, 0, 0))
+is_on_sphere(c(1, 1, 0))
 }

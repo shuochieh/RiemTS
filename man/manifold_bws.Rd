@@ -6,6 +6,22 @@
 \usage{
 manifold_bws()
 }
+\value{
+an object of class `c("manifold_bws", "manifold")`
+}
 \description{
-Bures-Wasserstein manifold of SPD matrices
+Construct a manifold object to pass as the first argument of [geod()],
+[Exp_map()], [Log_map()], [frechet_mean()], and [parallel_transport()].
+Points on this manifold are symmetric positive-definite (p by p) matrices.
+}
+\examples{
+mfd = manifold_bws()
+
+# two random 3x3 SPD matrices
+A = matrix(rnorm(9), 3, 3); A = A \%*\% t(A) + diag(3)
+B = matrix(rnorm(9), 3, 3); B = B \%*\% t(B) + diag(3)
+
+geod(mfd, A, B)                 # geodesic (Bures-Wasserstein) distance
+v = Log_map(mfd, B, A)          # tangent vector at A pointing towards B
+Exp_map(mfd, v, A)              # maps back to (approximately) B
 }

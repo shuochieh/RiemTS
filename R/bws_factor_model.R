@@ -125,6 +125,21 @@ predict_fm = function(V, mu, new_x) {
 #'  \item{E_lyapunov}{A set of orthonormal basis passed to the Lyapunov operator}
 #'  \item{mu_hat}{Estimated Frechet mean}
 #' }
+#' @examples
+#' set.seed(1)
+#' n = 30; p = 3
+#' X = array(NA, dim = c(n, p, p))
+#' for (i in 1:n) {
+#'   A = matrix(rnorm(p * p), p, p)
+#'   X[i, , ] = A %*% t(A) + diag(p)
+#' }
+#'
+#' model = rfm_bws(X, r = 1, h = 3)
+#' model$mu_hat          # estimated Frechet mean
+#' dim(model$f_hat)       # estimated factor process, n by r
+#'
+#' # evaluate fraction of variance explained on (here, in-sample) data
+#' Frac_Var_bws(X[1:5, , ], model, Euclidean_mean = model$mu_hat)
 #' @export
 rfm_bws = function (x, r, h = 6, batch_size = NULL, max.iter = 100,
                     mu_hat = NULL) {
@@ -159,6 +174,17 @@ rfm_bws = function (x, r, h = 6, batch_size = NULL, max.iter = 100,
 #' @param RFM_model output from rfm_bws
 #' @param evaluation_type to compute BWS distance or Euclidean (Frobenius distance)
 #' @param fraction whether to return fraction of variance unexplained or squared prediction errors
+#' @return a length-r vector, the fraction of variance unexplained (or squared prediction error) using 1..r factors
+#' @examples
+#' set.seed(1)
+#' n = 30; p = 3
+#' X = array(NA, dim = c(n, p, p))
+#' for (i in 1:n) {
+#'   A = matrix(rnorm(p * p), p, p)
+#'   X[i, , ] = A %*% t(A) + diag(p)
+#' }
+#' model = rfm_bws(X, r = 1, h = 3)
+#' Frac_Var_bws(X[1:5, , ], model, Euclidean_mean = model$mu_hat)
 #' @export
 Frac_Var_bws = function (x_test, RFM_model, evaluation_type = "BWS", fraction = TRUE,
                          Euclidean_mean, return_predictions = FALSE) {

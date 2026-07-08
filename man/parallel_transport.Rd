@@ -17,6 +17,16 @@ parallel_transport(mfd, from, to, v, ...)
 
 \item{...}{manifold-specific extra arguments (e.g. `method` for manifold_bws())}
 }
+\value{
+the transported tangent vector, at `to`
+}
 \description{
 Parallel transport of a tangent vector along a geodesic
+}
+\examples{
+mfd = manifold_sphere()
+x = c(1, 0, 0)
+y = c(0, 1, 0)
+v = c(0, 0, 1)   # tangent to the sphere at x
+parallel_transport(mfd, x, y, v)
 }

@@ -6,7 +6,22 @@
 \usage{
 log_vec_construct(x, M, E_lyapunov = NULL)
 }
+\arguments{
+\item{x}{an SPD matrix, or an (n by p by p) array of SPD matrices}
+
+\item{M}{base point (typically the Frechet mean)}
+
+\item{E_lyapunov}{optional precomputed basis from `tan_basis_bws(M)$E_lyapunov`}
+}
+\value{
+a coordinate vector (or an n by p*(p+1)/2 matrix for a batch)
+}
 \description{
 Express the tangent vector Log_M(x) in the canonical orthonormal basis
 returned by tan_basis_bws(). Thin wrapper around Log_map()/coords_from_basis().
+}
+\examples{
+Sigma = diag(3) + 0.1
+X = matrix(rnorm(9), 3, 3); X = X \%*\% t(X) + diag(3)
+log_vec_construct(X, Sigma)
 }

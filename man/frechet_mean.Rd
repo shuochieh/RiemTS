@@ -34,9 +34,27 @@ count (stochastic gradient descent, with tau decaying as tau / sqrt(iter))}
 
 \item{verbose}{if TRUE, print the loss at each iteration}
 }
+\value{
+the estimated Frechet mean, a single point on the manifold
+}
 \description{
 A single generic implementation shared by all manifolds: at each
 iteration, average the Log-mapped tangent vectors of a (sub)sample of the
 data at the current estimate, take an Exp step in that direction, and
 stop once the drop in average geodesic distance falls below `tol`.
+}
+\examples{
+set.seed(1)
+mfd = manifold_sphere()
+
+# 30 points scattered around c(1, 0, 0) on the unit sphere in R^3
+X = matrix(rnorm(30 * 3), 30, 3)
+X[, 1] = X[, 1] + 4
+X = X / sqrt(rowSums(X^2))
+
+mu_hat = frechet_mean(mfd, X)
+mu_hat
+
+# stochastic gradient descent on a subsample each iteration
+frechet_mean(mfd, X, batch_size = 10, verbose = FALSE)
 }

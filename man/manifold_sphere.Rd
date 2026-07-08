@@ -6,6 +6,22 @@
 \usage{
 manifold_sphere()
 }
+\value{
+an object of class `c("manifold_sphere", "manifold")`
+}
 \description{
-Sphere
+Construct a manifold object to pass as the first argument of [geod()],
+[Exp_map()], [Log_map()], [frechet_mean()], and [parallel_transport()].
+Points on this manifold are unit-norm vectors.
+}
+\examples{
+mfd = manifold_sphere()
+x = c(1, 0, 0)
+y = c(0, 1, 0)
+
+geod(mfd, x, y)                 # pi / 2, a quarter turn apart
+
+# batches of points work the same way, as an (n by q) matrix
+X = rbind(c(1, 0, 0), c(0, 0, 1))
+geod(mfd, X, y)
 }

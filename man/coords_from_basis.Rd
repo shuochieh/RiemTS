@@ -11,8 +11,20 @@ coords_from_basis(basis, x)
 
 \item{x}{a (p by p) matrix or an (n by p by p) array}
 }
+\value{
+a length-m coordinate vector, or an (n by m) matrix if `x` is a batch
+}
 \description{
 Unifies the (mathematically identical) coord_gr()/tangent_in_E() from the
 old Grassmannian/BWS utilities: for each basis element E_i, computes
 0.5 * trace(E_i %*% x).
+}
+\examples{
+Sigma = diag(3) + 0.1
+basis = tan_basis_bws(Sigma)$E   # an orthonormal basis for the tangent space at Sigma
+
+V = matrix(rnorm(9), 3, 3); V = (V + t(V)) / 2   # a random symmetric tangent vector
+z = coords_from_basis(basis, V)                  # V's coordinates in that basis
+V_reconstructed = tangent_from_coords(basis, z)
+max(abs(V - V_reconstructed))                    # ~ 0
 }

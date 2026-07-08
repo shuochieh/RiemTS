@@ -13,6 +13,17 @@ Exp_map(mfd, v, mu)
 
 \item{mu}{base point}
 }
+\value{
+a point, or a batch of points, in the same shape as `v`
+}
 \description{
-Exponential map on a manifold
+Maps a tangent vector `v` at base point `mu` back onto the manifold.
+Inverse of [Log_map()].
+}
+\examples{
+mfd = manifold_sphere()
+mu = c(1, 0, 0)
+x = c(0, 1, 0)
+v = Log_map(mfd, x, mu)   # tangent vector at mu pointing towards x
+Exp_map(mfd, v, mu)       # back to (approximately) x
 }

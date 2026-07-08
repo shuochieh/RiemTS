@@ -3,6 +3,12 @@
 ################################################################################
 
 #' Check if x is on the sphere (within some tolerance)
+#' @param x a numeric vector
+#' @param tol tolerance on `|| x || - 1`
+#' @return TRUE/FALSE
+#' @examples
+#' is_on_sphere(c(1, 0, 0))
+#' is_on_sphere(c(1, 1, 0))
 #' @export
 is_on_sphere = function(x, tol = 1e-6) {
   return(abs(norm(x, "2") - 1) <= tol)
@@ -124,6 +130,10 @@ parallel_transport.manifold_sphere = function(mfd, from, to, v, ...) {
 }
 
 #' A basis for the tangent space at mu (sphere)
+#' @param mu base point on the sphere
+#' @return a (d by d-1) matrix whose columns form an orthonormal basis of the tangent space at `mu`
+#' @examples
+#' basis_sphere(c(1, 0, 0))
 #' @export
 basis_sphere = function(mu) {
   d = length(mu)

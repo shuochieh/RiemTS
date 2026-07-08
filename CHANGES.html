@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>manifoldstats — Refactor Notes</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1f2328;
+    --muted: #57606a;
+    --border: #d0d7de;
+    --code-bg: #f6f8fa;
+    --accent: #0969da;
+    --ok: #1a7f37;
+    --pill-bg: #ddf4ff;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: var(--fg);
+    background: var(--bg);
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 6rem;
+    line-height: 1.6;
+  }
+  h1 { font-size: 1.9rem; margin-bottom: 0.2rem; }
+  h2 {
+    font-size: 1.35rem;
+    margin-top: 2.8rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+  }
+  h3 { font-size: 1.05rem; margin-top: 1.8rem; }
+  .subtitle { color: var(--muted); margin-top: 0; }
+  .meta {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-bottom: 2rem;
+  }
+  code, pre {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.85em;
+  }
+  code { background: var(--code-bg); padding: 0.15em 0.4em; border-radius: 4px; }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    overflow-x: auto;
+  }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  .grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  @media (max-width: 700px) { .grid2 { grid-template-columns: 1fr; } }
+  .card {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+  }
+  .card h4 { margin-top: 0; }
+  .pill {
+    display: inline-block;
+    background: var(--pill-bg);
+    color: var(--accent);
+    border-radius: 999px;
+    padding: 0.1em 0.7em;
+    font-size: 0.78em;
+    font-weight: 600;
+    margin-right: 0.4em;
+  }
+  .ok { color: var(--ok); font-weight: 600; }
+  ul.tree {
+    list-style: none;
+    padding-left: 1rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.85rem;
+  }
+  ul.tree li { margin: 0.15rem 0; }
+  .tree .comment { color: var(--muted); font-family: inherit; }
+  .callout {
+    border-left: 4px solid var(--accent);
+    background: var(--code-bg);
+    padding: 0.8rem 1rem;
+    border-radius: 0 6px 6px 0;
+    margin: 1rem 0;
+  }
+  .callout.warn { border-left-color: #9a6700; }
+  a { color: var(--accent); }
+  .toc {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    background: var(--code-bg);
+  }
+  .toc ul { margin: 0.3rem 0; }
+</style>
+</head>
+<body>
+
+<h1>manifoldstats</h1>
+<p class="subtitle">Merging BWS / Grassmannian / sphere utility scripts into a generic manifold interface</p>
+<p class="meta">Refactor date: 2026-07-08 &middot; Repository: <code>manifoldstatisticssoftwaredevelopmenet</code> &middot; Commits: <code>408f8b2</code> (baseline) → <code>d447895</code> (refactor)</p>
+
+<div class="toc">
+<strong>Contents</strong>
+<ul>
+  <li><a href="#why">Why</a></li>
+  <li><a href="#before-after">Before / after file structure</a></li>
+  <li><a href="#interface">The generic interface</a></li>
+  <li><a href="#duplication">What duplication got removed</a></li>
+  <li><a href="#compat">Backward compatibility</a></li>
+  <li><a href="#env">Environment setup</a></li>
+  <li><a href="#verification">Verification</a></li>
+  <li><a href="#gaps">Known pre-existing gap</a></li>
+</ul>
+</div>
+
+<h2 id="why">Why</h2>
+<p>
+The project consisted of three independent scripts — <code>BWS_util.R</code>, <code>grass_generic_util.R</code>,
+<code>sphere_generic_util.R</code> — each implementing the same conceptual operations
+(geodesic distance, exponential/logarithm maps, Fréchet mean, parallel transport, tangent-space
+bases) for a different manifold: Bures&ndash;Wasserstein SPD matrices, the Grassmannian, and the
+sphere. The math necessarily differs per manifold, but the <em>plumbing</em> around it — dispatch
+logic for "is this a single point or a batch of points?", the Riemannian gradient-descent loop for
+the Fréchet mean, and coordinate/basis bookkeeping — was copy-pasted three times with only minor
+variable-naming differences. The goal was to merge that duplicated plumbing into one generic
+interface while keeping every existing function callable.
+</p>
+
+<h2 id="before-after">Before / after file structure</h2>
+<div class="grid2">
+<div class="card">
+<h4>Before</h4>
+<ul class="tree">
+<li>BWS_util.R <span class="comment"># manifold + factor model, mixed</span></li>
+<li>grass_generic_util.R</li>
+<li>sphere_generic_util.R</li>
+<li>RFM_JBES.pdf</li>
+</ul>
+</div>
+<div class="card">
+<h4>After</h4>
+<ul class="tree">
+<li>DESCRIPTION, NAMESPACE <span class="comment"># package metadata</span></li>
+<li>R/manifold.R <span class="comment"># generic dispatch machinery</span></li>
+<li>R/bws.R <span class="comment"># BWS core math + S3 methods</span></li>
+<li>R/grassmann.R <span class="comment"># Grassmannian core math + S3 methods</span></li>
+<li>R/sphere.R <span class="comment"># sphere core math + S3 methods</span></li>
+<li>R/frechet_mean.R <span class="comment"># generic Fréchet mean</span></li>
+<li>R/parallel_transport.R <span class="comment"># generic transport dispatch</span></li>
+<li>R/compat.R <span class="comment"># old function names, kept working</span></li>
+<li>R/bws_factor_model.R <span class="comment"># rfm_bws etc., unchanged</span></li>
+<li>man/*.Rd <span class="comment"># roxygen2-generated docs</span></li>
+<li>tests/smoke_test.R</li>
+<li>RFM_JBES.pdf</li>
+</ul>
+</div>
+</div>
+<p>The whole directory became a proper R package, <code>manifoldstats</code>, git-initialized with the
+original three scripts committed as a baseline before any restructuring.</p>
+
+<h2 id="interface">The generic interface</h2>
+<p>
+Every manifold now boils down to an object created by a constructor, plus five generic functions
+that dispatch on it:
+</p>
+<pre><code>manifold_bws()                  # Bures-Wasserstein SPD manifold
+manifold_grassmann(p)           # Grassmannian Gr(d, p)
+manifold_sphere()                # unit sphere
+
+geod(mfd, x, y)                  # geodesic distance
+Exp_map(mfd, v, mu)              # exponential map
+Log_map(mfd, x, mu)              # logarithm map
+frechet_mean(mfd, x, ...)        # Riemannian (stochastic) gradient descent mean
+parallel_transport(mfd, from, to, v)</code></pre>
+<p>
+Each manifold declares one fact — <code>point_ndim</code>: a BWS/Grassmannian point is a <code>p&times;p</code>
+matrix (<code>point_ndim = 2</code>), a sphere point is a length-<code>q</code> vector
+(<code>point_ndim = 1</code>) — and two shared helpers, <code>map_over_points()</code> and
+<code>map_over_point_pairs()</code>, use that one fact to handle every combination of "single point"
+vs. "batch of n points" generically. The manifold-specific math (<code>geod_BWS_core</code>,
+<code>Exp_gr_core</code>, <code>Log_sphere_core</code>, &hellip;) is registered as an S3 method per
+manifold and stays exactly as specialized as it needs to be — only the dispatch/looping code
+around it was unified.
+</p>
+<p>
+<code>coords_from_basis()</code> / <code>tangent_from_coords()</code> replace both
+<code>coord_gr()</code>/<code>coord2tan()</code> (Grassmannian) and <code>tangent_in_E()</code>/<code>log_to_tangent()</code>
+(BWS) — these turned out to be the exact same operation (project a tangent matrix onto an
+orthonormal basis via a 0.5-scaled trace inner product, and reconstruct from coefficients) written
+twice under different names.
+</p>
+
+<h2 id="duplication">What duplication got removed</h2>
+<table>
+<tr><th>Old (3 copies)</th><th>New (1 copy)</th><th>What was duplicated</th></tr>
+<tr>
+  <td><code>geod_BWS</code>, <code>geod_gr</code>, <code>geod_sphere</code></td>
+  <td><code>geod()</code> + <code>map_over_point_pairs()</code></td>
+  <td>(single,single)/(array,single)/(single,array)/(array,array) branching, differing only in
+      which <code>_core</code> function was called</td>
+</tr>
+<tr>
+  <td><code>Exp_BWS</code>/<code>Log_BWS</code>, <code>Exp_gr</code>/<code>Log_gr</code>, <code>Exp_sphere</code>/<code>Log_sphere</code></td>
+  <td><code>Exp_map()</code> / <code>Log_map()</code> + <code>map_over_points()</code></td>
+  <td>"is x a single point or an (n by &hellip;) array?" dispatch</td>
+</tr>
+<tr>
+  <td><code>mean_on_BWS</code>, <code>mean_on_gr</code>, <code>mean_on_sphere</code></td>
+  <td><code>frechet_mean()</code></td>
+  <td>the entire Riemannian gradient-descent loop (Log &rarr; average &rarr; Exp step &rarr; convergence check),
+      plus unifying <code>batch_size</code> (BWS, absolute count) and <code>batch_por</code> (Grassmannian,
+      fraction) into one parameter</td>
+</tr>
+<tr>
+  <td><code>coord_gr</code>/<code>coord2tan</code>, <code>tangent_in_E</code>/<code>log_to_tangent</code></td>
+  <td><code>coords_from_basis()</code> / <code>tangent_from_coords()</code></td>
+  <td>identical trace-inner-product math under different names</td>
+</tr>
+</table>
+
+<div class="callout">
+<strong>Note on the Grassmannian mean.</strong> The old <code>mean_on_gr</code> projected each
+gradient step into basis coordinates before averaging (<code>coord_gr</code> &rarr; <code>colMeans</code> &rarr;
+<code>coord2tan</code>), while BWS and the sphere averaged tangent matrices directly. Since
+<code>coord2tan(coord_gr(X))</code> is the identity for an orthonormal basis, that detour is
+mathematically equivalent to a direct average — the new generic <code>frechet_mean()</code> drops it, and
+<code>tests/smoke_test.R</code> confirms numerically that the two approaches agree.
+</div>
+
+<h2 id="compat">Backward compatibility</h2>
+<p>
+Nothing else in the project (verified against its own backup zip) currently calls the old function
+names, but they're kept working in <code>R/compat.R</code> as one-line wrappers around the new generic
+interface, e.g.:
+</p>
+<pre><code>geod_BWS   = function(X, Y) geod(manifold_bws(), X, Y)
+mean_on_gr = function(x, p, tau = 0.1, tol = 1e-8, max.iter = 1000,
+                      batch_por = 1.0, init = NULL, verbose = FALSE) {
+  frechet_mean(manifold_grassmann(p), x, tau = tau, tol = tol, max.iter = max.iter,
+              batch_size = batch_por, init = init, verbose = verbose)
+}
+pt_sphere  = function(x, y, V) parallel_transport(manifold_sphere(), x, y, V)</code></pre>
+<p>
+BWS-specific higher-level modeling code — <code>rfm_bws</code>, <code>LYB_fm</code>, <code>predict_fm</code>,
+<code>Frac_Var_bws</code>/<code>Frac_Var_LYB</code>/<code>Frac_Var_ora</code>, <code>dyn_RFM</code>/<code>dyn_LFM</code>,
+<code>VAR1</code>, <code>project_to_SPD</code>, <code>is.spd</code>, <code>symmetric_to_vector</code>,
+<code>vector_to_symmetric</code> — isn't part of the cross-manifold duplication problem, so it moved into
+<code>R/bws_factor_model.R</code> unchanged.
+</p>
+
+<h2 id="env">Environment setup</h2>
+<ul>
+  <li>Initialized git (<code>git init</code>), committed the original three scripts as a baseline
+      before restructuring.</li>
+  <li>Scaffolded a minimal R package by hand (<code>usethis</code>/<code>devtools</code> weren't
+      installed): <code>DESCRIPTION</code>, <code>R/</code>, <code>man/</code>.</li>
+  <li>Generated <code>NAMESPACE</code> and docs via <code>roxygen2::roxygenise()</code> (already installed).</li>
+  <li>Installed <code>expm</code>, <code>deSolve</code>, <code>maotai</code> from CRAN into the user
+      library — these were already required by the original scripts'
+      <code>library()</code> calls, just never installed in this environment.</li>
+</ul>
+
+<h2 id="verification">Verification</h2>
+<p><code>tests/smoke_test.R</code> — a dependency-free script (no <code>testthat</code>), run via
+<code>Rscript tests/smoke_test.R</code>. All 13 checks pass:</p>
+<pre><code>[OK] BWS round-trip Exp(Log(x, mu), mu) == x
+[OK] BWS geod(x, x) == 0
+[OK] BWS frechet_mean matches pre-refactor reference
+[OK] BWS parallel_transport returns p x p matrix
+[OK] BWS compat geod_BWS matches geod()
+[OK] Grassmann round-trip Exp(Log(x, mu), mu) == x
+[OK] Grassmann geod(x, x) == 0
+[OK] Grassmann frechet_mean matches pre-refactor reference (validates dropping the coord/basis detour)
+[OK] Grassmann parallel_transport returns d x d matrix
+[OK] Sphere round-trip Exp(Log(x, mu), mu) == x
+[OK] Sphere geod(x, x) == 0
+[OK] Sphere frechet_mean matches pre-refactor reference
+[OK] Sphere parallel_transport returns length-q vector
+
+<span class="ok">All smoke tests passed.</span></code></pre>
+<p>
+The "matches pre-refactor reference" checks run a hand-copied reference implementation of the
+<em>original</em> <code>mean_on_BWS</code>/<code>mean_on_gr</code>/<code>mean_on_sphere</code> loops (same
+initial point, no batching, so there's no RNG-driven divergence) and assert numerical agreement
+with the new <code>frechet_mean()</code> to within <code>1e-6</code>. A separate, ad hoc check also ran the full
+<code>rfm_bws()</code> &rarr; <code>Frac_Var_bws()</code> pipeline end-to-end on synthetic data.
+</p>
+
+<h2 id="gaps">Known pre-existing gap</h2>
+<div class="callout warn">
+<code>dyn_RFM()</code> in <code>R/bws_factor_model.R</code> calls <code>main_BWS(...)</code>, which was never
+defined in any of the original three files. This isn't something the refactor introduced — it was
+already broken before. Flagging it here in case it should be fixed separately.
+</div>
+
+</body>
+</html>

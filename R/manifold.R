@@ -18,19 +18,70 @@
 NULL
 
 #' Bures-Wasserstein manifold of SPD matrices
+#'
+#' Construct a manifold object to pass as the first argument of [geod()],
+#' [Exp_map()], [Log_map()], [frechet_mean()], and [parallel_transport()].
+#' Points on this manifold are symmetric positive-definite (p by p) matrices.
+#'
+#' @return an object of class `c("manifold_bws", "manifold")`
+#' @examples
+#' mfd = manifold_bws()
+#'
+#' # two random 3x3 SPD matrices
+#' A = matrix(rnorm(9), 3, 3); A = A %*% t(A) + diag(3)
+#' B = matrix(rnorm(9), 3, 3); B = B %*% t(B) + diag(3)
+#'
+#' geod(mfd, A, B)                 # geodesic (Bures-Wasserstein) distance
+#' v = Log_map(mfd, B, A)          # tangent vector at A pointing towards B
+#' Exp_map(mfd, v, A)              # maps back to (approximately) B
 #' @export
 manifold_bws = function() {
   structure(list(point_ndim = 2), class = c("manifold_bws", "manifold"))
 }
 
 #' Grassmannian Gr(d, p)
+#'
+#' Construct a manifold object to pass as the first argument of [geod()],
+#' [Exp_map()], [Log_map()], [frechet_mean()], and [parallel_transport()].
+#' Points on this manifold are rank-p orthogonal projectors (d by d matrices).
+#'
 #' @param p rank of the projectors; if NULL it is inferred per-call from the data
+#' @return an object of class `c("manifold_grassmann", "manifold")`
+#' @examples
+#' d = 5; p = 2
+#' mfd = manifold_grassmann(p)
+#'
+#' # two random rank-p projectors
+#' rand_projector = function(d, p) {
+#'   U = qr.Q(qr(matrix(rnorm(d * d), d, d)))[, 1:p, drop = FALSE]
+#'   U %*% t(U)
+#' }
+#' A = rand_projector(d, p)
+#' B = rand_projector(d, p)
+#'
+#' geod(mfd, A, B)
 #' @export
 manifold_grassmann = function(p = NULL) {
   structure(list(point_ndim = 2, p = p), class = c("manifold_grassmann", "manifold"))
 }
 
 #' Sphere
+#'
+#' Construct a manifold object to pass as the first argument of [geod()],
+#' [Exp_map()], [Log_map()], [frechet_mean()], and [parallel_transport()].
+#' Points on this manifold are unit-norm vectors.
+#'
+#' @return an object of class `c("manifold_sphere", "manifold")`
+#' @examples
+#' mfd = manifold_sphere()
+#' x = c(1, 0, 0)
+#' y = c(0, 1, 0)
+#'
+#' geod(mfd, x, y)                 # pi / 2, a quarter turn apart
+#'
+#' # batches of points work the same way, as an (n by q) matrix
+#' X = rbind(c(1, 0, 0), c(0, 0, 1))
+#' geod(mfd, X, y)
 #' @export
 manifold_sphere = function() {
   structure(list(point_ndim = 1), class = c("manifold_sphere", "manifold"))
@@ -155,8 +206,23 @@ Log_core = function(mfd, x, mu, ...) UseMethod("Log_core")
 
 #' Geodesic distance on a manifold
 #'
+#' Works identically for [manifold_bws()], [manifold_grassmann()], and
+#' [manifold_sphere()] objects, and for any combination of single points and
+#' batches of points (an (n by ...) array/matrix) in `x` and `y`.
+#'
 #' @param mfd a manifold object (manifold_bws(), manifold_grassmann(p), manifold_sphere())
 #' @param x,y single points or (n by ...) batches of points
+#' @return a scalar (single point vs. single point), or a length-n vector if
+#'   either `x` or `y` (or both, paired) is a batch of n points
+#' @examples
+#' mfd = manifold_sphere()
+#' x = c(1, 0, 0)
+#' y = c(0, 1, 0)
+#' geod(mfd, x, y)
+#'
+#' # one point vs. a batch of points
+#' X = rbind(c(1, 0, 0), c(0, 0, 1), c(0, 1, 0))
+#' geod(mfd, X, y)
 #' @export
 geod = function(mfd, x, y) {
   map_over_point_pairs(mfd, function(a, b) geod_core(mfd, a, b), x, y)
@@ -164,9 +230,19 @@ geod = function(mfd, x, y) {
 
 #' Exponential map on a manifold
 #'
+#' Maps a tangent vector `v` at base point `mu` back onto the manifold.
+#' Inverse of [Log_map()].
+#'
 #' @param mfd a manifold object
 #' @param v a single tangent vector or a batch of tangent vectors, at mu
 #' @param mu base point
+#' @return a point, or a batch of points, in the same shape as `v`
+#' @examples
+#' mfd = manifold_sphere()
+#' mu = c(1, 0, 0)
+#' x = c(0, 1, 0)
+#' v = Log_map(mfd, x, mu)   # tangent vector at mu pointing towards x
+#' Exp_map(mfd, v, mu)       # back to (approximately) x
 #' @export
 Exp_map = function(mfd, v, mu) {
   map_over_points(mfd, function(vi) Exp_core(mfd, vi, mu), v)
@@ -174,9 +250,18 @@ Exp_map = function(mfd, v, mu) {
 
 #' Logarithm map on a manifold
 #'
+#' Maps a point `x` to the tangent space at base point `mu`. Inverse of
+#' [Exp_map()].
+#'
 #' @param mfd a manifold object
 #' @param x a single point or a batch of points
 #' @param mu base point
+#' @return a tangent vector, or a batch of tangent vectors, at `mu`
+#' @examples
+#' mfd = manifold_sphere()
+#' mu = c(1, 0, 0)
+#' x = c(0, 1, 0)
+#' Log_map(mfd, x, mu)
 #' @export
 Log_map = function(mfd, x, mu) {
   map_over_points(mfd, function(xi) Log_core(mfd, xi, mu), x)
@@ -190,6 +275,15 @@ Log_map = function(mfd, x, mu) {
 #'
 #' @param basis an (m by p by p) array of basis matrices
 #' @param x a (p by p) matrix or an (n by p by p) array
+#' @return a length-m coordinate vector, or an (n by m) matrix if `x` is a batch
+#' @examples
+#' Sigma = diag(3) + 0.1
+#' basis = tan_basis_bws(Sigma)$E   # an orthonormal basis for the tangent space at Sigma
+#'
+#' V = matrix(rnorm(9), 3, 3); V = (V + t(V)) / 2   # a random symmetric tangent vector
+#' z = coords_from_basis(basis, V)                  # V's coordinates in that basis
+#' V_reconstructed = tangent_from_coords(basis, z)
+#' max(abs(V - V_reconstructed))                    # ~ 0
 #' @export
 coords_from_basis = function(basis, x) {
   m = dim(basis)[1]
@@ -219,6 +313,12 @@ coords_from_basis = function(basis, x) {
 #'
 #' @param basis an (m by p by p) array of basis matrices
 #' @param coords a length-m coefficient vector, or an (n by m) matrix
+#' @return a (p by p) matrix, or an (n by p by p) array if `coords` is a matrix
+#' @examples
+#' Sigma = diag(3) + 0.1
+#' basis = tan_basis_bws(Sigma)$E
+#' z = c(1, 0, 0, 0, 0, 0)          # coordinates of the first basis element
+#' tangent_from_coords(basis, z)    # reconstructs basis[1, , ]
 #' @export
 tangent_from_coords = function(basis, coords) {
   p = dim(basis)[2]

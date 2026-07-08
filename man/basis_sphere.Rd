@@ -6,6 +6,15 @@
 \usage{
 basis_sphere(mu)
 }
+\arguments{
+\item{mu}{base point on the sphere}
+}
+\value{
+a (d by d-1) matrix whose columns form an orthonormal basis of the tangent space at `mu`
+}
 \description{
 A basis for the tangent space at mu (sphere)
+}
+\examples{
+basis_sphere(c(1, 0, 0))
 }

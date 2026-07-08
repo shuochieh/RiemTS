@@ -9,6 +9,25 @@ manifold_grassmann(p = NULL)
 \arguments{
 \item{p}{rank of the projectors; if NULL it is inferred per-call from the data}
 }
+\value{
+an object of class `c("manifold_grassmann", "manifold")`
+}
 \description{
-Grassmannian Gr(d, p)
+Construct a manifold object to pass as the first argument of [geod()],
+[Exp_map()], [Log_map()], [frechet_mean()], and [parallel_transport()].
+Points on this manifold are rank-p orthogonal projectors (d by d matrices).
+}
+\examples{
+d = 5; p = 2
+mfd = manifold_grassmann(p)
+
+# two random rank-p projectors
+rand_projector = function(d, p) {
+  U = qr.Q(qr(matrix(rnorm(d * d), d, d)))[, 1:p, drop = FALSE]
+  U \%*\% t(U)
+}
+A = rand_projector(d, p)
+B = rand_projector(d, p)
+
+geod(mfd, A, B)
 }

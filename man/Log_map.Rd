@@ -13,6 +13,16 @@ Log_map(mfd, x, mu)
 
 \item{mu}{base point}
 }
+\value{
+a tangent vector, or a batch of tangent vectors, at `mu`
+}
 \description{
-Logarithm map on a manifold
+Maps a point `x` to the tangent space at base point `mu`. Inverse of
+[Exp_map()].
+}
+\examples{
+mfd = manifold_sphere()
+mu = c(1, 0, 0)
+x = c(0, 1, 0)
+Log_map(mfd, x, mu)
 }

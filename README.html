@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>manifoldstats — Documentation</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1f2328;
+    --muted: #57606a;
+    --border: #d0d7de;
+    --code-bg: #f6f8fa;
+    --accent: #0969da;
+    --ok: #1a7f37;
+    --pill-bg: #ddf4ff;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: var(--fg);
+    background: var(--bg);
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem 6rem;
+    line-height: 1.6;
+  }
+  h1 { font-size: 1.9rem; margin-bottom: 0.2rem; }
+  h2 {
+    font-size: 1.35rem;
+    margin-top: 2.8rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+  }
+  h3 { font-size: 1.05rem; margin-top: 1.8rem; }
+  .subtitle { color: var(--muted); margin-top: 0; }
+  .meta { font-size: 0.85rem; color: var(--muted); margin-bottom: 2rem; }
+  code, pre {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.85em;
+  }
+  code { background: var(--code-bg); padding: 0.15em 0.4em; border-radius: 4px; }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    overflow-x: auto;
+  }
+  pre code { background: none; padding: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; font-size: 0.92rem; }
+  th, td { text-align: left; padding: 0.5rem 0.7rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  .callout {
+    border-left: 4px solid var(--accent);
+    background: var(--code-bg);
+    padding: 0.8rem 1rem;
+    border-radius: 0 6px 6px 0;
+    margin: 1rem 0;
+  }
+  .callout.warn { border-left-color: #9a6700; }
+  a { color: var(--accent); }
+  .toc {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.5rem;
+    background: var(--code-bg);
+  }
+  .toc ul { margin: 0.3rem 0; }
+  .comment { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<h1>manifoldstats</h1>
+<p class="subtitle">Statistics on matrix manifolds through one shared interface</p>
+<p class="meta">Package documentation &middot; see <a href="CHANGES.html">CHANGES.html</a> for the refactor that produced this structure</p>
+
+<div class="toc">
+<strong>Contents</strong>
+<ul>
+  <li><a href="#overview">Overview</a></li>
+  <li><a href="#install">Installation</a></li>
+  <li><a href="#pick">Pick a manifold</a></li>
+  <li><a href="#distances">Distances, Exp/Log maps</a></li>
+  <li><a href="#mean">Fréchet mean</a></li>
+  <li><a href="#transport">Parallel transport</a></li>
+  <li><a href="#bases">Tangent-space bases and coordinates</a></li>
+  <li><a href="#rfm">Bures-Wasserstein Riemannian Factor Model</a></li>
+  <li><a href="#layout">Package layout</a></li>
+  <li><a href="#tests">Tests</a></li>
+</ul>
+</div>
+
+<h2 id="overview">Overview</h2>
+<p>
+<code>manifoldstats</code> provides statistics — geodesic distance, exponential/logarithm maps,
+Fréchet mean, parallel transport — on three matrix manifolds (Bures-Wasserstein SPD matrices, the
+Grassmannian, and the sphere) through one shared interface, plus a Riemannian factor model for
+Bures-Wasserstein data (<code>rfm_bws()</code>, from <code>RFM_JBES.pdf</code>).
+</p>
+<p>Every manifold exposes the same five operations:</p>
+<pre><code>geod(mfd, x, y)                    <span class="comment"># geodesic distance</span>
+Exp_map(mfd, v, mu)                <span class="comment"># exponential map (tangent space -> manifold)</span>
+Log_map(mfd, x, mu)                <span class="comment"># logarithm map (manifold -> tangent space)</span>
+frechet_mean(mfd, x, ...)          <span class="comment"># Riemannian (stochastic) gradient descent mean</span>
+parallel_transport(mfd, from, to, v)</code></pre>
+<p>
+<code>mfd</code> is a small object built by <code>manifold_bws()</code>, <code>manifold_grassmann(p)</code>, or
+<code>manifold_sphere()</code> that tells these functions what a "point" looks like for that manifold.
+Every function above works the same way whether <code>x</code>/<code>y</code>/<code>v</code> is a single point or
+an <code>(n by ...)</code> batch of points.
+</p>
+
+<h2 id="install">Installation</h2>
+<p>This is a local, unpublished package. From the project root:</p>
+<pre><code><span class="comment"># for interactive development (no install step, re-run after edits)</span>
+pkgload::load_all(".")
+
+<span class="comment"># or a real install</span>
+install.packages(".", repos = NULL, type = "source")
+library(manifoldstats)</code></pre>
+<p>Requires the <code>expm</code>, <code>deSolve</code>, and <code>maotai</code> packages (installed automatically
+as dependencies).</p>
+
+<h2 id="pick">Pick a manifold</h2>
+<pre><code>mfd_bws    = manifold_bws()            <span class="comment"># SPD matrices, Bures-Wasserstein metric</span>
+mfd_grass  = manifold_grassmann(p = 2) <span class="comment"># Gr(d, 2): rank-2 projectors</span>
+mfd_sphere = manifold_sphere()         <span class="comment"># unit sphere</span></code></pre>
+
+<h2 id="distances">Distances, Exp/Log maps</h2>
+<p>Using the sphere as the simplest example — BWS and Grassmannian work identically, just with
+matrix-valued points instead of vectors:</p>
+<pre><code>mfd = manifold_sphere()
+x = c(1, 0, 0)
+y = c(0, 1, 0)
+
+geod(mfd, x, y)                <span class="comment"># pi/2</span>
+
+v = Log_map(mfd, x, y)         <span class="comment"># tangent vector at y pointing towards x</span>
+Exp_map(mfd, v, y)             <span class="comment"># maps back to (approximately) x</span></code></pre>
+<p>Batches work the same way — pass an <code>(n by q)</code> matrix (sphere) or an
+<code>(n by p by p)</code> array (BWS/Grassmannian) instead of a single point, for either
+<code>x</code>, <code>y</code>, or both:</p>
+<pre><code>X = rbind(c(1, 0, 0), c(0, 0, 1), c(0, 1, 0))
+geod(mfd, X, y)                 <span class="comment"># length-3 vector of distances</span>
+Log_map(mfd, X, y)              <span class="comment"># 3 x 3 matrix of tangent vectors at y</span></code></pre>
+
+<h2 id="mean">Fréchet mean</h2>
+<pre><code>set.seed(1)
+mfd = manifold_sphere()
+X = matrix(rnorm(30 * 3), 30, 3)
+X[, 1] = X[, 1] + 4             <span class="comment"># cluster the points around c(1, 0, 0)</span>
+X = X / sqrt(rowSums(X^2))      <span class="comment"># project onto the sphere</span>
+
+mu_hat = frechet_mean(mfd, X)
+
+<span class="comment"># stochastic gradient descent on a random subsample each iteration</span>
+frechet_mean(mfd, X, batch_size = 10)</code></pre>
+<p>
+<code>batch_size</code> is shared across all three manifolds: <code>NULL</code> means full-batch gradient
+descent; a value in <code>(0, 1]</code> is a proportion of the data; a value <code>&gt; 1</code> is an
+absolute subsample count (both interpretations existed separately in the pre-refactor code as
+<code>batch_por</code> and <code>batch_size</code>).
+</p>
+
+<h2 id="transport">Parallel transport</h2>
+<pre><code>mfd = manifold_sphere()
+x = c(1, 0, 0)
+y = c(0, 1, 0)
+v = c(0, 0, 1)                  <span class="comment"># tangent to the sphere at x</span>
+parallel_transport(mfd, x, y, v)</code></pre>
+
+<h2 id="bases">Tangent-space bases and coordinates</h2>
+<p>BWS and the Grassmannian additionally support expressing a tangent vector (a symmetric matrix)
+as a coordinate vector with respect to an orthonormal basis, and reconstructing it:</p>
+<pre><code>Sigma = diag(3) + 0.1
+basis = tan_basis_bws(Sigma)$E            <span class="comment"># orthonormal basis at Sigma</span>
+
+V = matrix(rnorm(9), 3, 3); V = (V + t(V)) / 2   <span class="comment"># a symmetric tangent vector</span>
+z = coords_from_basis(basis, V)            <span class="comment"># V's coordinates in that basis</span>
+tangent_from_coords(basis, z)              <span class="comment"># back to V</span></code></pre>
+<p>The Grassmannian equivalent is <code>basis_gr(P, p)</code> with the same
+<code>coords_from_basis()</code>/<code>tangent_from_coords()</code> pair.</p>
+
+<h2 id="rfm">Bures-Wasserstein Riemannian Factor Model</h2>
+<p>
+<code>rfm_bws()</code> fits the Riemannian factor model of <code>RFM_JBES.pdf</code> to a sample of SPD
+matrices: it estimates the Fréchet mean, builds a tangent-space basis there, and fits a linear
+factor model (<code>LYB_fm()</code>, Lam-Yao-Bathia) on the log-mapped, coordinate-expressed data.
+</p>
+<pre><code>set.seed(1)
+n = 60; p = 4
+X = array(NA, dim = c(n, p, p))
+for (i in 1:n) {
+  A = matrix(rnorm(p * p), p, p)
+  X[i, , ] = A %*% t(A) + diag(p)
+}
+
+model = rfm_bws(X, r = 2, h = 6)
+model$mu_hat            <span class="comment"># estimated Frechet mean</span>
+dim(model$f_hat)        <span class="comment"># estimated factor process, n x r</span>
+model$A                 <span class="comment"># loading matrix</span>
+
+<span class="comment"># evaluate fraction of variance explained by 1..r factors on held-out data</span>
+Frac_Var_bws(X[1:10, , ], model, Euclidean_mean = model$mu_hat)</code></pre>
+<p>
+<code>Frac_Var_LYB()</code> evaluates a plain (non-Riemannian) linear factor model fit with
+<code>LYB_fm()</code> directly on vectorized SPD matrices, for comparison. <code>dyn_RFM()</code>/<code>dyn_LFM()</code>
+build one-step-ahead forecasts using a VAR(1) on the estimated factors.
+</p>
+<div class="callout warn">
+<strong>Note:</strong> <code>dyn_RFM()</code> calls <code>main_BWS(...)</code>, which isn't defined anywhere in
+this package — that's a pre-existing gap from before this package existed, not something
+introduced here.
+</div>
+
+<h2 id="layout">Package layout</h2>
+<table>
+<tr><th>File</th><th>Contents</th></tr>
+<tr><td><code>R/manifold.R</code></td><td>manifold constructors, generic dispatch machinery, <code>geod</code>/<code>Exp_map</code>/<code>Log_map</code>, <code>coords_from_basis</code>/<code>tangent_from_coords</code></td></tr>
+<tr><td><code>R/bws.R</code></td><td>Bures-Wasserstein core math + S3 methods, <code>tan_basis_bws</code>, <code>log_vec_construct</code></td></tr>
+<tr><td><code>R/grassmann.R</code></td><td>Grassmannian core math + S3 methods, <code>basis_gr</code></td></tr>
+<tr><td><code>R/sphere.R</code></td><td>sphere core math + S3 methods, <code>basis_sphere</code></td></tr>
+<tr><td><code>R/frechet_mean.R</code></td><td>generic Fréchet mean (Riemannian gradient descent)</td></tr>
+<tr><td><code>R/parallel_transport.R</code></td><td>generic <code>parallel_transport()</code> dispatcher</td></tr>
+<tr><td><code>R/compat.R</code></td><td>old per-manifold function names (<code>geod_BWS</code>, <code>mean_on_gr</code>, <code>Exp_sphere</code>, &hellip;), kept as one-line wrappers</td></tr>
+<tr><td><code>R/bws_factor_model.R</code></td><td><code>rfm_bws</code>, <code>LYB_fm</code>, <code>Frac_Var_*</code>, <code>dyn_RFM</code>/<code>dyn_LFM</code>, and related BWS-specific modeling code</td></tr>
+</table>
+<p>
+Every exported function has full documentation with runnable examples — see <code>?geod</code>,
+<code>?frechet_mean</code>, <code>?rfm_bws</code>, etc., or browse the generated <code>man/*.Rd</code> files.
+For the history and rationale of the refactor that produced this structure, see
+<a href="CHANGES.html">CHANGES.html</a>.
+</p>
+
+<h2 id="tests">Tests</h2>
+<pre><code>Rscript tests/smoke_test.R</code></pre>
+<p>
+A dependency-free script (no <code>testthat</code>) checking Exp/Log round-trips,
+<code>geod(x,x) == 0</code>, that <code>frechet_mean()</code> numerically matches the original pre-refactor
+per-manifold implementations, and <code>parallel_transport()</code> for all three manifolds.
+</p>
+
+</body>
+</html>

@@ -11,7 +11,16 @@ tangent_from_coords(basis, coords)
 
 \item{coords}{a length-m coefficient vector, or an (n by m) matrix}
 }
+\value{
+a (p by p) matrix, or an (n by p by p) array if `coords` is a matrix
+}
 \description{
 Unifies the (mathematically identical) coord2tan()/log_to_tangent() from
 the old Grassmannian/BWS utilities.
+}
+\examples{
+Sigma = diag(3) + 0.1
+basis = tan_basis_bws(Sigma)$E
+z = c(1, 0, 0, 0, 0, 0)          # coordinates of the first basis element
+tangent_from_coords(basis, z)    # reconstructs basis[1, , ]
 }

@@ -30,6 +30,21 @@ determine_batch_n = function(n, batch_size) {
 #'   count (stochastic gradient descent, with tau decaying as tau / sqrt(iter))
 #' @param init optional initial value; if NULL a random data point is used
 #' @param verbose if TRUE, print the loss at each iteration
+#' @return the estimated Frechet mean, a single point on the manifold
+#' @examples
+#' set.seed(1)
+#' mfd = manifold_sphere()
+#'
+#' # 30 points scattered around c(1, 0, 0) on the unit sphere in R^3
+#' X = matrix(rnorm(30 * 3), 30, 3)
+#' X[, 1] = X[, 1] + 4
+#' X = X / sqrt(rowSums(X^2))
+#'
+#' mu_hat = frechet_mean(mfd, X)
+#' mu_hat
+#'
+#' # stochastic gradient descent on a subsample each iteration
+#' frechet_mean(mfd, X, batch_size = 10, verbose = FALSE)
 #' @export
 frechet_mean = function(mfd, x, tau = 0.1, tol = 1e-8, max.iter = 1000,
                         batch_size = NULL, init = NULL, verbose = FALSE) {

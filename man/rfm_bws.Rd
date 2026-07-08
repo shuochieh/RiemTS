@@ -27,3 +27,19 @@ This function estimates the Riemannian factor model (RFM) with data being
 symmetric positive definite matrices equipped with the Bures-Wasserstein
 metric.
 }
+\examples{
+set.seed(1)
+n = 30; p = 3
+X = array(NA, dim = c(n, p, p))
+for (i in 1:n) {
+  A = matrix(rnorm(p * p), p, p)
+  X[i, , ] = A \%*\% t(A) + diag(p)
+}
+
+model = rfm_bws(X, r = 1, h = 3)
+model$mu_hat          # estimated Frechet mean
+dim(model$f_hat)       # estimated factor process, n by r
+
+# evaluate fraction of variance explained on (here, in-sample) data
+Frac_Var_bws(X[1:5, , ], model, Euclidean_mean = model$mu_hat)
+}
