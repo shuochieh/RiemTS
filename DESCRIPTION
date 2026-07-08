@@ -1,0 +1,16 @@
+Package: manifoldstats
+Type: Package
+Title: Generic Statistics on Matrix Manifolds
+Version: 0.1.0
+Description: A common interface (geodesic distance, exponential/logarithm
+    maps, Frechet mean, parallel transport) for statistics on the
+    Bures-Wasserstein manifold of SPD matrices, the Grassmannian, and the
+    sphere, plus a Riemannian factor model for Bures-Wasserstein data.
+License: MIT
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.3.1
+Imports:
+    expm,
+    deSolve,
+    maotai
