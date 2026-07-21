@@ -5,6 +5,11 @@ Grassmannian, and the sphere — through one shared interface, plus a
 Riemannian factor model for Bures-Wasserstein data (`rfm_bws()`, from
 `RFM_JBES.pdf`).
 
+## Authors
+
+- Shuo-chieh Huang
+- Shen-Hsun Liao
+
 Every manifold exposes the same five operations:
 
 ```r
