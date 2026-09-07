@@ -1,29 +1,14 @@
-# manifoldstats
+# RiemTS
 
-Statistics on matrix manifolds — Bures-Wasserstein SPD matrices, the
-Grassmannian, and the sphere — through one shared interface, plus a
-Riemannian factor model for Bures-Wasserstein data (`rfm_bws()`, from
-`RFM_JBES.pdf`).
+Time series analysis on Riemannian manifolds, including the sphere, Bures-Wasserstein and Log-Euclidean SPD matrices, 
+and the Grassmannian. 
+- Implements manifold operations through **one shared interface**. 
+- Implements the Riemannian factor model.
 
 ## Authors
 
-- Shuo-chieh Huang
+- Shuo-Chieh Huang
 - Shen-Hsun Liao
-
-Every manifold exposes the same five operations:
-
-```r
-geod(mfd, x, y)                    # geodesic distance
-Exp_map(mfd, v, mu)                # exponential map (tangent space -> manifold)
-Log_map(mfd, x, mu)                # logarithm map (manifold -> tangent space)
-frechet_mean(mfd, x, ...)          # Riemannian (stochastic) gradient descent mean
-parallel_transport(mfd, from, to, v)
-```
-
-`mfd` is a small object built by `manifold_bws()`, `manifold_grassmann(p)`, or
-`manifold_sphere()` that tells these functions what a "point" looks like for
-that manifold. Every function above works the same way whether `x`/`y`/`v`
-is a single point or an `(n by ...)` batch of points.
 
 ## Installation
 
@@ -50,6 +35,23 @@ mfd_bws    = manifold_bws()            # SPD matrices, Bures-Wasserstein metric
 mfd_grass  = manifold_grassmann(p = 2) # Gr(d, 2): rank-2 projectors
 mfd_sphere = manifold_sphere()         # unit sphere
 ```
+
+
+Every manifold exposes the same five operations:
+
+```r
+geod(mfd, x, y)                    # geodesic distance
+Exp_map(mfd, v, mu)                # exponential map (tangent space -> manifold)
+Log_map(mfd, x, mu)                # logarithm map (manifold -> tangent space)
+frechet_mean(mfd, x, ...)          # Riemannian (stochastic) gradient descent mean
+parallel_transport(mfd, from, to, v)
+```
+
+`mfd` is a small object built by `manifold_bws()`, `manifold_grassmann(p)`, or
+`manifold_sphere()` that tells these functions what a "point" looks like for
+that manifold. Every function above works the same way whether `x`/`y`/`v`
+is a single point or an `(n by ...)` batch of points.
+
 
 ### Distances, Exp/Log maps
 

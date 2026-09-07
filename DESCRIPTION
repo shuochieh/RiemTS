@@ -1,11 +1,12 @@
-Package: manifoldstats
+Package: RiemTS
 Type: Package
-Title: Generic Statistics on Matrix Manifolds
+Title: Time Series on Riemannian Manifolds
 Version: 0.1.0
-Description: A common interface (geodesic distance, exponential/logarithm
-    maps, Frechet mean, parallel transport) for statistics on the
-    Bures-Wasserstein manifold of SPD matrices, the Grassmannian, and the
-    sphere, plus a Riemannian factor model for Bures-Wasserstein data.
+Description: Time series toolkit for data supported on Riemannian manifolds, 
+    including a Riemannian factor model. A common interface (geodesic distance, 
+    exponential/logarithm maps, Frechet mean, parallel transport) is provided 
+    for data on various Riemannian manifolds, including Bures-Wasserstein and 
+    Log-Euclidean manifolds of SPD matrices, the Grassmannian, and the sphere. 
 License: MIT
 Encoding: UTF-8
 LazyData: true
