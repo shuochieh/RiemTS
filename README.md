@@ -1,9 +1,13 @@
 # RiemTS
 
-Time series analysis on Riemannian manifolds, including the sphere, Bures-Wasserstein and Log-Euclidean SPD matrices, 
+Time series analysis on various Riemannian manifolds, including the sphere, Bures-Wasserstein and Log-Euclidean SPD matrices, 
 and the Grassmannian. 
-- Implements manifold operations through **one shared interface**. 
-- Implements the Riemannian factor model.
+- Implements manifold operations through **one shared interface**, including
+  - Geodesic distances
+  - Riemannian exponential/logarithm maps
+  - Parallel transport
+  - Fr\'{e}chet mean estimation
+- Implements a Riemannian factor model for time series.
 
 ## Authors
 
