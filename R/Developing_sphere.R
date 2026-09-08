@@ -97,16 +97,22 @@ geod_sphere = function (x, y, tol = 1e-6) {
 }
 
 #' @export
-geod_core.manifold_sphere = function(mfd, x, y, ...) geod_sphere(x, y, ...)
+geod.manifold_sphere = function(mfd, x, y, ...) geod_sphere(x, y, ...)
 
 #' exponential map on the sphere
 #' 
 #' @param x an array of tangent vectors
 #' @param mu base point (if multiple base points are supplied the number of base points should 
 #'           match the number of tangent vectors)
+#' @param tol tolerance parameter for numerical approximation near zero
+#' 
+#' @examples 
+#' mu = c(0, 1)
+#' x = c(pi/2, 0)
+#' Exp_sphere(x, mu)
 #' 
 #' @export
-Exp_sphere = function (x, mu) {
+Exp_sphere = function (x, mu, tol = 1e-4) {
   
   # Standardize inputs: x to matrix (n x q), mu to vector (q) or matrix (n x q)
   is_x_vec = is.vector(x)
@@ -117,32 +123,139 @@ Exp_sphere = function (x, mu) {
   n = nrow(x)
   d = ncol(x)
   
-  
-  
-  
-  if (is.matrix(x)) {
-    
-    if (sum(abs(x)) == 0) {
-      return (matrix(mu, nrow = nrow(x), ncol = ncol(x), byrow = T))
+  if (is.vector(mu)) {
+    if(length(mu) != d) {
+      stop("Exp_sphere: dimension mismatch between x and mu.")
     }
     
-    x_norm = sqrt(rowSums(x^2))
-    x_norm[which(x_norm == 0)] = 1
-    std_x = x / x_norm
-    res = outer(cos(x_norm), mu) + sin(x_norm) * std_x
+    mu_mat = matrix(mu, nrow = n, ncol = d, byrow = TRUE)
+  } else if (is.matrix(mu)) {
+    if (nrow(mu) != n || ncol(mu) != d) {
+      stop("Exp_sphere: dimension mismatch between x and mu.")
+    }
     
-    res = res / sqrt(rowSums(res^2)) # normalize again to avoid numerical instability
+    mu_mat = mu
   } else {
-    
-    if (sum(abs(x)) == 0) {
-      return (mu)
-    }
-    
-    x_norm = sqrt(sum(x^2))
-    res = cos(x_norm) * mu + sin(x_norm) * x / x_norm
-    
-    res = res / sqrt(sum(res^2))
+    stop("Exp_sphere: mu must be a vector or a matrix.")
+  }
+  
+  # Squared norm avoids unnecessary sqrt for small vectors
+  r2 = rowSums(x^2)
+  r  = sqrt(r2)
+  
+  # Taylor expansion threshold at tol
+  # Below tol, 1 - r2/6 + r2^2/120 approximates sin(r)/r 
+  small_mask = (r < tol)
+  
+  sinc = numeric(n)
+  
+  # Standard division for normal/large vectors
+  sinc[!small_mask] = sin(r[!small_mask]) / r[!small_mask]
+  
+  # Smooth, highly accurate Taylor series for small/zero vectors
+  sinc[small_mask]  = 1 - r2[small_mask] / 6 + (r2[small_mask]^2) / 120
+  
+  # Pointwise Exponential Map
+  res = cos(r) * mu_mat + sinc * x
+  
+  # Safeguard unit-norm mapping
+  res = res / sqrt(rowSums(res^2))
+  
+  if (is_x_vec) {
+    return(res[1, ])
+  }
+  
+  return(res)
+}
+
+#' @export
+Exp_mfd.manifold_sphere = function(mfd, v, mu, ...) Exp_sphere(v, mu, ...)
+
+#' logarithmic map for the sphere
+#' 
+#' @param x an array of points on the sphere
+#' @param mu base point(s)
+#' @param tol tolerance parameter for numerical approximation near zero
+#' @param tol_antipodal tolerance parameter for checking antipodal points 
+#' 
+#' @examples 
+#' p1 = c(1, 0, 0)
+#' p2 = c(0, 1, 0)
+#' p3 = c(0, 0, 1)
+#' x = rbind(p1, p2, p3)
+#' mu = rbind(p3, p2, p1)
+#' Log_sphere(x, mu)
+#' 
+#' @export
+Log_sphere = function (x, mu, tol = 1e-4, tol_antipodal = 1e-7) {
+  
+  x_was_vec = is.vector(x)
+  mu_was_vec = is.vector(mu)
+  
+  if (x_was_vec) {
+    x = matrix(x, nrow = 1)
+  }
+  if (mu_was_vec) {
+    mu = matrix(mu, nrow = 1)
+  }
+  
+  if (!is.matrix(x) || !is.matrix(mu)) {
+    stop("Log_sphere: x and mu must be vectors or matrices.")
+  }
+  
+  nx = nrow(x)
+  nmu = nrow(mu)
+  d = ncol(x)
+  
+  if (ncol(mu) != d) {
+    stop("Log_sphere: dimension mismatch (columns of x and mu).")
+  }
+  
+  if (nmu == 1 && nx > 1) {
+    mu = matrix(mu, nrow = nx, ncol = d, byrow = TRUE)
+    n = nx
+  } else if (nx == 1 && nmu > 1) {
+    x = matrix(x, nrow = nmu, ncol = d, byrow = TRUE)
+    n = nmu
+  } else if (nx == nmu) {
+    n = nx
+  } else {
+    stop("Log_sphere: row dimensions must match or one input must have 1 row.")
+  }
+  
+  # inner product
+  inner = rowSums(x * mu)
+  inner = pmax(pmin(inner, 1), -1)
+  
+  theta = acos(inner)
+  
+  if (any(abs(theta - pi) < tol)) {
+    warning("Log_sphere:contains antipodal pairs where Log map is undefined.")
+  }
+  
+  Proj = x - inner * mu
+  
+  scale = numeric(n)
+  small_mask = (theta < tol)
+  
+  scale[!small_mask] = theta[!small_mask] / sin(theta[!small_mask])
+  
+  theta2 = theta[small_mask]^2
+  scale[small_mask] = 1 + theta2 / 6 + (7 * theta2^2) / 360
+  
+  res = scale * Proj
+  
+  if (x_was_vec && mu_was_vec) {
+    return (c(res))
   }
   
   return (res)
 }
+
+#' @export
+Log_mfd.manifold_sphere = function(mfd, x, mu, ...) Log_sphere(x, mu, ...)
+
+
+
+
+
