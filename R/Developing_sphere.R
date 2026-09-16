@@ -169,7 +169,7 @@ Exp_sphere = function (x, mu, tol = 1e-4) {
 }
 
 #' @export
-Exp_mfd.manifold_sphere = function(mfd, v, mu, ...) Exp_sphere(v, mu, ...)
+Exp_mfd.manifold_sphere = function (mfd, v, mu, ...) Exp_sphere(v, mu, ...)
 
 #' logarithmic map for the sphere
 #' 
@@ -253,8 +253,182 @@ Log_sphere = function (x, mu, tol = 1e-4, tol_antipodal = 1e-7) {
 }
 
 #' @export
-Log_mfd.manifold_sphere = function(mfd, x, mu, ...) Log_sphere(x, mu, ...)
+Log_mfd.manifold_sphere = function (mfd, x, mu, ...) Log_sphere(x, mu, ...)
 
+#' Tangency check for the sphere
+#' 
+tangency_check_sphere = function (x, V, tol = 1e-8) {
+  if (is.vector(V)) {
+    V = matrix(V, nrow = 1)
+  }
+  
+  if (!is.null(tol) && !is.infinite(tol)) {
+    inner_Vx = c(V %*% x)
+    if (any(sqrt(sum(inner_Vx^2)) > tol)) {
+      return (FALSE)
+    }
+  }
+  return (TRUE)
+}
+
+#' Parallel transport via geodesics for the sphere
+#'
+#' @param x starting point
+#' @param y end point
+#' @param V tangent vector at x (a vector or k by d array)
+#' @param tol tolerance for tangency check (default is 1e-8)
+#' 
+#' @examples 
+#' pt_sphere(c(0,0,1), c(0,sin(pi/5),cos(pi/5)), c(1,-1,0))
+#' 
+#' @export
+pt_sphere = function(x, y, V, tol = 1e-8) {
+  was_vector = is.vector(V)
+  if (was_vector) {
+    V = matrix(V, nrow = 1)
+  }
+  
+  k = nrow(V)
+  d = ncol(V)
+  
+  if (length(x) != d || length(y) != d) {
+    stop("pt_sphere: x, y, and columns of V must have matching dimension.")
+  }
+  
+  # Tangency check
+  if (!tangency_check_sphere(x, V, tol = tol)) {
+    stop("pt_sphere: one or more row vectors in V are not tangent at x")
+  }
+  
+  xy_inner = sum(x * y)
+  xy_inner = pmax(pmin(xy_inner, 1), -1)
+  
+  if (xy_inner >= 1 - 1e-12) {
+    # identity transport
+    if (was_vector) {
+      return (c(V)) 
+    }
+    return (V)
+  }
+  
+  if (xy_inner <= -1 + 1e-12) {
+    stop("pt_sphere: x and y are (nearly) antipodal; parallel transport along unique geodesic is not defined.")
+  }
+  
+  theta = acos(xy_inner)
+  
+  e1 = x
+  proj_y = y - xy_inner * x
+  proj_y_norm = sqrt(sum(proj_y^2))
+  e2 = proj_y / proj_y_norm
+  
+  a = V %*% e2
+  V_perp = V - a %*% matrix(e2, nrow = 1)
+  
+  e2_transported = cos(theta) * e2 - sin(theta) * e1
+  res = (a %*% matrix(e2_transported, nrow = 1)) + V_perp
+  
+  if (was_vector) {
+    return (c(res))
+  }
+  return (res)
+}
+
+#' @export
+ptransport.manifold_sphere = function(mfd, from, to, v, ...) {
+  pt_sphere(from, to, v, ...)
+}
+
+#' A basis for the tangent space at mu (sphere)
+#' @param mu base point on the sphere
+#' @return a (d by d-1) matrix whose columns form an orthonormal basis of the tangent space at `mu`
+#' 
+#' @examples
+#' basis_sphere(c(1, 0, 0))
+#' 
+#' @export
+basis_sphere = function(mu) {
+  d = length(mu)
+  B = matrix(svd(mu, d, 1)$u[, -1], ncol = d - 1)
+  
+  return(B)
+}
+
+#' @export
+basis.manifold_sphere = function (mfd, mu) {
+  basis_sphere(mu)
+}
+
+#' Compute the Riemannian Hessian vector action H[v] on the sphere
+#' 
+#' Evaluates the action of the Riemannian Hessian of f(x) = 0.5 * d^2(x, mu)
+#' on one or more tangent vectors v
+#' 
+#' @param x base point where the Hessian is evaluated
+#' @param mu target reference point
+#' @param V tangent vector(s) at x (vector of length d or k by d matrix)
+#' @param tol tolerance for tangency check
+#' 
+#' @export
+Hess_sphere = function (x, mu, V, tol = 1e-8) {
+  was_vector = is.vector(V)
+  if (was_vector) {
+    V = matrix(V, nrow = 1)
+  }
+  
+  k = nrow(V)
+  d = ncol(V)
+  
+  if (length(x) != d || length(mu) != d) {
+    stop("Hess_sphere: x, mu, and columns of V must have matching dimension")
+  }
+  
+  # Tangency check
+  if (!tangency_check_sphere(x, V, tol = tol)) {
+    stop("pt_sphere: one or more row vectors in V are not tangent at x")
+  }
+  
+  cos_theta = sum(x * mu)
+  cos_theta = pmax(pmin(cos_theta, 1), -1)
+  theta = acos(cos_theta)
+  theta2 = theta^2
+  
+  if (theta < 1e-4) {
+    c2 = theta2 / 3 + (theta2^2) / 45
+    c1 = 1 - c2
+  } else {
+    c1 = theta / tan(theta)
+    c2 = 1 - c1
+  }
+  
+  proj_x = x - cos_theta * mu
+  sin_theta = sqrt(sum(proj_x^2))
+  if (sin_theta < 1e-12) {
+    if (was_vector) {
+      return (c(V)) # Hessian is identity around mu
+    } 
+    return (V)
+  }
+  
+  u = proj_x / sin_theta
+  
+  v_mu = c(V %*% mu)
+  v_u = c(V %*% u)
+  
+  term1 = c1 * (V - v_mu %*% matrix(mu, nrow = 1))
+  term2 = c2 * (v_u %*% matrix(u, nrow = 1))
+  
+  res = term1 + term2
+  if (was_vector) {
+    return(c(res))
+  }
+  return (res)
+}
+
+#' @export
+Hessian.manifold_sphere = function (mfd, x, mu, V, ...) {
+  Hess_sphere(x, mu, V, ...)
+}
 
 
 

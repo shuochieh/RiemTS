@@ -7,6 +7,7 @@ and the Grassmannian.
   - Riemannian exponential/logarithm maps
   - Parallel transport
   - Fr\'{e}chet mean estimation
+  - Riemannian Hessian actions
 - Implements a Riemannian factor model for time series.
 
 ## Authors
