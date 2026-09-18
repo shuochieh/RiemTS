@@ -169,7 +169,9 @@ Exp_sphere = function (x, mu, tol = 1e-4) {
 }
 
 #' @export
-Exp_mfd.manifold_sphere = function (mfd, v, mu, ...) Exp_sphere(v, mu, ...)
+Exp_mfd.manifold_sphere = function (mfd, p, v, ...) {
+  Exp_sphere(mu = p, x = v, ...)
+}
 
 #' logarithmic map for the sphere
 #' 
@@ -253,7 +255,7 @@ Log_sphere = function (x, mu, tol = 1e-4, tol_antipodal = 1e-7) {
 }
 
 #' @export
-Log_mfd.manifold_sphere = function (mfd, x, mu, ...) Log_sphere(x, mu, ...)
+Log_mfd.manifold_sphere = function (mfd, p, q, ...) Log_sphere(x = q, mu = p, ...)
 
 #' Tangency check for the sphere
 #' 
