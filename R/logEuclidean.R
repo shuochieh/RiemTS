@@ -238,8 +238,50 @@ Log_mfd.manifold_logEuclidean = function (mfd, p, q, ...) {
   Log_logE(x = p, y = q)
 }
 
+#' parallel transport along geodesic on the log-Euclidean geometry
+#' 
+#' @param p an $m \times m$ SPD matrix (start)
+#' @param q an $m \times m$ SPD matrix (end)
+#' @param x an $m \times m$ or $n \times m \times m$ array of symmetric matrices, 
+#'          identified as tangent vectors at p
+#' 
+#' @examples 
+#' p = crossprod(matrix(rnorm(9), ncol = 3)) + diag(1, 3)
+#' q = crossprod(matrix(rnorm(9), ncol = 3)) + diag(1, 3)
+#' v = matrix(rnorm(9), ncol = 3)
+#' v = 0.5 * (v + t(v))
+#' pt_logE(p, q, v)
+#' 
+#' @export
+pt_logE = function (p, q, x) {
+  if (length(dim(x)) == 3) {
+    n = dim(x)[1]
+    was_matrix = FALSE
+  } else if (length(dim(x)) == 2) {
+    n = 1
+    x = array(x, dim = c(1, dim(x)))
+    was_matrix = TRUE
+  } else {
+    stop("pt_logE: number of dimensions of x must be either 2 or 3.")
+  }
+  
+  m = dim(x)[2]
+  res = array(NA, dim = c(n, m, m))
+  
+  log_q = logm(q)
+  for (i in 1:n) {
+    temp = diff_explog(P = p, Q = x[i,,], type = "log")
+    res[i,,] = diff_explog(P = log_q, Q = temp, type = "exp")
+  }
+  if (was_matrix) {
+    return (res[1,,])
+  }
+  return (res)
+}
 
-
-
+#' @export
+ptransport.manifold_logEuclidean = function (mfd, from, to, v, ...) {
+  pt_logE(p = from, q = to, x = v)
+}
 
 
