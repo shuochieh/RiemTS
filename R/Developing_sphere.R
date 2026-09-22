@@ -343,7 +343,7 @@ ptransport.manifold_sphere = function(mfd, from, to, v, ...) {
 
 #' A basis for the tangent space at mu (sphere)
 #' @param mu base point on the sphere
-#' @return a (d by d-1) matrix whose columns form an orthonormal basis of the tangent space at `mu`
+#' @return a (d-1 by d) matrix whose rows form an orthonormal basis of the tangent space at `mu`
 #' 
 #' @examples
 #' basis_sphere(c(1, 0, 0))
@@ -353,12 +353,53 @@ basis_sphere = function(mu) {
   d = length(mu)
   B = matrix(svd(mu, d, 1)$u[, -1], ncol = d - 1)
   
-  return(B)
+  return(t(B))
 }
 
 #' @export
-basis.manifold_sphere = function (mfd, mu) {
-  basis_sphere(mu)
+basis.manifold_sphere = function (mfd, p, ...) {
+  basis_sphere(p)
+}
+
+#' Evaluate the Riemannian metric at p (sphere)
+#' 
+#' @param p base point on the sphere
+#' @param v tangent vector(s) at p (d-dim vector or n by d array)
+#' @param w tangent vector(s) at p (d-dim vector or n by d array)
+#' 
+#' @examples 
+#' p = c(1, 0, 0)
+#' B = basis_sphere(p)
+#' Riem_metric_sphere(p, B, B[1,])
+#' 
+#' @export
+Riem_metric_sphere = function (p, v, w, ...) {
+  
+  if (!tangency_check_sphere(p, v, ...)) {
+    stop("Riem_metric_sphere: v not tangent at p.")
+  }
+  if (!tangency_check_sphere(p, w, ...)) {
+    stop("Riem_metric_sphere: w not tangent at p.")
+  }
+  
+  if (is.vector(v) && is.vector(w)) {
+    return (sum(v * w))
+  } else if (!is.vector(v) && is.vector(w)) {
+    return (c(v %*% w))
+  } else if (is.vector(v) && !is.vector(w)) {
+    return (c(w %*% v))
+  } else {
+    if (!all(dim(v) == dim(w))) {
+      stop("Riem_metric_sphere: tangent vector dimensions must match or be 1.")
+    }
+    
+    return (diag(v %*% t(w)))
+  }
+}
+
+#' @export
+Riem_metric.manifold_sphere = function (mfd, p, v, w, ...) {
+  Riem_metric_sphere(p, v, w, ...)
 }
 
 #' Compute the Riemannian Hessian vector action H[v] on the sphere
@@ -428,8 +469,8 @@ Hess_sphere = function (x, mu, V, tol = 1e-8) {
 }
 
 #' @export
-Hessian.manifold_sphere = function (mfd, x, mu, V, ...) {
-  Hess_sphere(x, mu, V, ...)
+Hessian.manifold_sphere = function (mfd, p, x, V, ...) {
+  Hess_sphere(mu = p, x = x, V = V, ...)
 }
 
 
