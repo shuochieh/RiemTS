@@ -78,7 +78,7 @@ geod_logE = function (x, y) {
 }
 
 #' @export
-geod.manifold_logEuclidean = function (mfd, x, y) {
+geod.manifold_logEuclidean = function (mfd, x, y, ...) {
   geod_logE(x, y)
 }
 
@@ -148,7 +148,7 @@ diff_explog = function (P, Q, type = "exp") {
   return (res)
 }
 
-#' exponential map on the log-Euclidean geometry
+#' Exponential map on the log-Euclidean geometry
 #' 
 #' @param z an $m \times m$  or $n \times m \times m$ array of tangent vectors (identified as symmetric matrices)
 #' @param x an $m \times m$ SPD matrix (as the base point)
@@ -193,10 +193,10 @@ Exp_mfd.manifold_logEuclidean = function (mfd, p, v, ...) {
   Exp_logE(z = v, x = p)
 }
 
-#' logarithm map on the log-Euclidean geometry
+#' Logarithm map on the log-Euclidean geometry
 #' 
-#' @param x an $m \times m$ SPD matrix (as the base point)
-#' @param y an $m \times m$  or $n \times m \times m$ array of SPD matrices
+#' @param x an \eqn{m \times m} SPD matrix (as the base point)
+#' @param y an \eqn{m \times m}  or \eqn{n \times m \times m} array of SPD matrices
 #' 
 #' @examples 
 #' x = crossprod(matrix(rnorm(9), 3, 3)) + diag(1, 3)
@@ -238,11 +238,11 @@ Log_mfd.manifold_logEuclidean = function (mfd, p, q, ...) {
   Log_logE(x = p, y = q)
 }
 
-#' parallel transport along geodesic on the log-Euclidean geometry
+#' Parallel transport along geodesic on the log-Euclidean geometry
 #' 
-#' @param p an $m \times m$ SPD matrix (start)
-#' @param q an $m \times m$ SPD matrix (end)
-#' @param x an $m \times m$ or $n \times m \times m$ array of symmetric matrices, 
+#' @param p an \eqn{m \times m} SPD matrix (start)
+#' @param q an \eqn{m \times m} SPD matrix (end)
+#' @param x an \eqn{m \times m} or \eqn{n \times m \times m} array of symmetric matrices, 
 #'          identified as tangent vectors at p
 #' 
 #' @examples 
