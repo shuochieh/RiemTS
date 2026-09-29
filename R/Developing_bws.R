@@ -310,13 +310,153 @@ ptransport.manifold_BWS = function (mfd, from, to, v, ...) {
   pt_BWS(p = from, q = to, x = V, ...)
 }
 
+#' A basis for the tangent space at p (SPD matrix in the Bures--Wasserstein geometry)
+#'
+#' @param p an \eqn{m \times m} SPD matrix (base point)
+#' 
+#' @examples 
+#' p = crossprod(matrix(rnorm(9), ncol = 3)) + diag(1, 3)
+#' basis_BWS(p)
+#' 
+#' @export
+basis_BWS = function (p) {
+  d = dim(p)[1]
+  
+  model = eigen(p)
+  lambdas = model$values
+  P = model$vectors
+  
+  E = array(NA, dim = c(d * (d + 1) / 2, d, d))
+  # E_lyapunov = array(NA, dim = c(d * (d + 1) / 2, d, d))
+  counter = 0
+  for (i in 1:d) {
+    for (j in i:d) {
+      counter = counter + 1
+      S = matrix(0, ncol = d, nrow = d)
+      # S_tilde = matrix(0, ncol = d, nrow = d)
+      if (i == j) {
+        S[i,j] = sqrt(2 * (lambdas[i] + lambdas[j]))
+        # S_tilde[i,j] = 1 / sqrt(lambdas[i])
+      } else {
+        S[i,j] = sqrt(lambdas[i] + lambdas[j])
+        S[j,i] = sqrt(lambdas[i] + lambdas[j])
+        
+        # S_tilde[i,j] = 1 / sqrt(lambdas[i] + lambdas[j])
+        # S_tilde[j,i] = 1 / sqrt(lambdas[i] + lambdas[j])
+      }
+      E[counter,,] = P %*% S %*% t(P)
+      # E_lyapunov[counter,,] = P %*% S_tilde %*% t(P)
+    }
+  }
+  
+  # return (list("E" = E, "E_lyapunov" = E_lyapunov))
+  return (E)
+}
 
+#' @export
+basis.manifold_BWS = function (mfd, p, ...) {
+  basis_BWS(p)
+}
 
+#' Evaluate the Riemannian metric at p (Bures--Wasserstein)
+#' 
+#' @param p an \eqn{m \times m} SPD matrix (base point)
+#' @param v an \eqn{m \times m} or \eqn{n \times m \times m} array of symmetric matrices
+#'          (tangent vectors at p)
+#' @param w an \eqn{m \times m} or \eqn{n \times m \times m} array of symmetric matrices
+#'          (tangent vectors at p)
+#' 
+#' @examples 
+#' X = crossprod(matrix(rnorm(9), ncol = 3)) + diag(1, 3)
+#' B = basis_BWS(X)
+#' Riem_metric_BWS(X, B, B[1,,])
+#' 
+#' @export
+Riem_metric_BWS = function (p, v, w) {
+  
+  dim_v = dim(v)
+  dim_w = dim(w)
+  
+  # Format v
+  if (length(dim_v) == 2) {
+    n_v = 1
+    v = array(v, dim = c(1, dim_v))
+  } else if (length(dim_v) == 3) {
+    n_v = dim_v[1]
+  } else {
+    stop("Riem_metric_BWS: dimension of v must be 2 or 3.")
+  }
+  
+  # Format w
+  if (length(dim_w) == 2) {
+    n_w = 1
+    w = array(w, dim = c(1, dim_w))
+  } else if (length(dim_w) == 3) {
+    n_w = dim_w[1]
+  } else {
+    stop("Riem_metric_BWS: dimension of w must be 2 or 3.")
+  }
+  
+  if (n_v != n_w) {
+    if (n_v == 1) {
+      v = array(rep(v[1,,], n_w), dim = c(dim_v, n_w))
+      v = aperm(v, c(3, 1, 2))
+      n = n_w
+    } else if (n_w == 1) {
+      w = array(rep(w[1,,], n_v), dim = c(dim_w, n_v))
+      w = aperm(w, c(3, 1, 2))
+      n = n_v
+    } else {
+      stop("Riem_metric_BWS: number of tangent vectors in v and w must match or be 1.")
+    }
+  } else {
+    n = n_v
+  }
+  
+  m = dim(p)[1]
+  if (length(dim(p)) != 2 || dim(p)[2] != m || dim(v)[2] != m || dim(v)[3] != m) {
+    stop("Riem_metric_BWS: input matrix dimensions must match (m x m).")
+  }
+  
+  # --- Computation ---
+  if (n_v == 1) {
+    v_lyapunov = lyapunov(p, v[1,,])
+  } else if (n_w == 1) {
+    w_lyapunov = lyapunov(p, w[1,,])
+  }
+  res = numeric(n)
+  for (i in 1:n) {
+    if (n_v == 1) {
+      res[i] = 0.5 * sum(diag(v_lyapunov %*% w[i,,]))
+    } else if (n_w == 1) {
+      res[i] = 0.5 * sum(diag(w_lyapunov %*% v[i,,]))
+    } else {
+      v_lyapunov = lyapunov(p, v[i,,])
+      res[i] = 0.5 * sum(diag(v_lyapunov %*% w[i,,]))
+    }
+  }
+  
+  if (n == 1) {
+    return (res[1])
+  }
+  return (res)
+}
 
+#' @export
+Riem_metric.manifold_BWS = function (mdf, p, v, w, ...) {
+  Riem_metric_BWS(p = p, v = v, w = w)
+}
 
-
-
-
+#' Compute the Riemannian Hessian vector action \eqn{H[v]} on the Bures--Wasserstein geometry
+#' 
+#' Evaluates the action of the Riemannian Hessian of \eqn{f(x) = 0.5 * d^2(x, \mu)}
+#' on one or more tangent vectors v
+#' 
+#' @param x  base point where the Hessian is evaluated
+#' @param p  target reference point
+#' @param V  tangent vector(s) at x (\eqn{m \times m} or \eqn{n \times m \times m} arrays)
+#' 
+# To be done...
 
 
 

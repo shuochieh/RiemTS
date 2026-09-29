@@ -284,9 +284,9 @@ ptransport.manifold_logEuclidean = function (mfd, from, to, v, ...) {
   pt_logE(p = from, q = to, x = v)
 }
 
-#' A basis for the tangent space at p (Log-Euclidean matrix)
+#' A basis for the tangent space at p (SPD matrix in the Log-Euclidean geometry)
 #'
-#' @param p an $m \times m$ SPD matrix (base point)
+#' @param p an \eqn{m \times m} SPD matrix (base point)
 #' 
 #' @examples 
 #' p = crossprod(matrix(rnorm(9), ncol = 3)) + diag(1, 3)
@@ -328,10 +328,10 @@ basis.manifold_logEuclidean = function (mfd, p, ...) {
 
 #' Evaluate the Riemannian metric at p (Log-Euclidean)
 #' 
-#' @param p an $m \times m$ SPD matrix (base point)
-#' @param v an $m \times m$ or $n \times m \times m$ array of symmetric matrices
+#' @param p an \eqn{m \times m} SPD matrix (base point)
+#' @param v an \eqn{m \times m} or \eqn{n \times m \times m} array of symmetric matrices
 #'          (tangent vectors at p)
-#' @param w an $m \times m$ or $n \times m \times m$ array of symmetric matrices
+#' @param w an \eqn{m \times m} or \eqn{n \times m \times m} array of symmetric matrices
 #'          (tangent vectors at p)
 #' 
 #' @examples 
@@ -352,7 +352,7 @@ Riem_metric_logE = function (p, v, w) {
   } else if (length(dim_v) == 3) {
     n_v = dim_v[1]
   } else {
-    stop("Riem_metric: dimension of v must be 2 or 3.")
+    stop("Riem_metric_logE: dimension of v must be 2 or 3.")
   }
   
   # Format w
@@ -362,7 +362,7 @@ Riem_metric_logE = function (p, v, w) {
   } else if (length(dim_w) == 3) {
     n_w = dim_w[1]
   } else {
-    stop("Riem_metric: dimension of w must be 2 or 3.")
+    stop("Riem_metric_logE: dimension of w must be 2 or 3.")
   }
   
   if (n_v != n_w) {
@@ -375,7 +375,7 @@ Riem_metric_logE = function (p, v, w) {
       w = aperm(w, c(3, 1, 2))
       n = n_v
     } else {
-      stop("Riem_metric: number of tangent vectors in v and w must match or be 1.")
+      stop("Riem_metric_logE: number of tangent vectors in v and w must match or be 1.")
     }
   } else {
     n = n_v
@@ -383,7 +383,7 @@ Riem_metric_logE = function (p, v, w) {
   
   m = dim(p)[1]
   if (length(dim(p)) != 2 || dim(p)[2] != m || dim(v)[2] != m || dim(v)[3] != m) {
-    stop("Riem_metric: input matrix dimensions must match (m x m).")
+    stop("Riem_metric_logE: input matrix dimensions must match (m x m).")
   }
   
   # --- Computation ---
@@ -397,7 +397,7 @@ Riem_metric_logE = function (p, v, w) {
   }
   
   if (n == 1) {
-    return(res[1])
+    return (res[1])
   }
   return(res)
 }
@@ -407,14 +407,14 @@ Riem_metric.manifold_logEuclidean = function (mfd, p, v, w, ...) {
   Riem_metric_logE(p, v, w)
 }
 
-#' Compute the Riemannian Hessian vector action H[v] on the Log-Euclidean geometry
+#' Compute the Riemannian Hessian vector action \eqn{H[v]} on the Log-Euclidean geometry
 #' 
-#' Evaluates the action of the Riemannian Hessian of f(x) = 0.5 * d^2(x, mu)
+#' Evaluates the action of the Riemannian Hessian of \eqn{f(x) = 0.5 * d^2(x, \mu)}
 #' on one or more tangent vectors v
 #' 
 #' @param x  base point where the Hessian is evaluated
 #' @param p  target reference point
-#' @param V  tangent vector(s) at x ($m \times m$ or $n \times m \times m$ arrays)
+#' @param V  tangent vector(s) at x (\eqn{m \times m} or \eqn{n \times m \times m} arrays)
 #' 
 #' @export
 Hess_logE = function (x, p, V) {

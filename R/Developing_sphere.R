@@ -1,12 +1,16 @@
 library(Matrix)
 
 #' Check if x is on the sphere (within some tolerance)
+#' 
 #' @param x a numeric vector or matrix
-#' @param tol tolerance on `|| x || - 1`
+#' @param tol tolerance parameter
+#' 
 #' @return TRUE/FALSE
+#' 
 #' @examples
 #' is_on_sphere(c(1, 0, 0))
 #' is_on_sphere(c(1, 1, 0))
+#' 
 #' @export
 is_on_sphere = function(x, tol = 1e-6) {
   # Treat vector as 1-row matrix to unify norm calculation
@@ -34,8 +38,8 @@ is_on_sphere = function(x, tol = 1e-6) {
 #' If x and y are both arrays, a vector of n distances corresponding to pointwise
 #' geodesic distances is returned.
 #' 
-#' @param x an $(n \times q)$ array of points or a $q$-dimensional vector
-#' @param y an $(n \times q)$ array of points or a $q$-dimensional vector
+#' @param x an \eqn{n \times q} array of points or a \eqn{q}-dimensional vector
+#' @param y an \eqn{n \times q} array of points or a \eqn{q}-dimensional vector
 #' @tol tolerance in checking sphere membership
 #' 
 #' @examples 
@@ -402,9 +406,9 @@ Riem_metric.manifold_sphere = function (mfd, p, v, w, ...) {
   Riem_metric_sphere(p, v, w, ...)
 }
 
-#' Compute the Riemannian Hessian vector action H[v] on the sphere
+#' Compute the Riemannian Hessian vector action \eqn{H[v]} on the sphere
 #' 
-#' Evaluates the action of the Riemannian Hessian of f(x) = 0.5 * d^2(x, mu)
+#' Evaluates the action of the Riemannian Hessian of \eqn{f(x) = 0.5 * d^2(x, \mu)}
 #' on one or more tangent vectors v
 #' 
 #' @param x base point where the Hessian is evaluated
