@@ -66,7 +66,7 @@ geod_logE = function (x, y) {
     D = t(t(mat_y) - vec_x)
     return (sqrt(rowSums(D^2)))
   } else if (ny == 1) {
-    mat_x = matrix(log_x, nrow = nx, ncol = n * n)
+    mat_x = matrix(log_x, nrow = nx, ncol = m * m)
     vec_y = c(log_y)
     D = t(t(mat_x) - vec_y)
     return (sqrt(rowSums(D^2)))
@@ -78,7 +78,7 @@ geod_logE = function (x, y) {
 }
 
 #' @export
-geod.manifold_logEuclidean = function (mfd, x, y, ...) {
+geod.manifold_logE = function (mfd, x, y, ...) {
   geod_logE(x, y)
 }
 
@@ -189,7 +189,7 @@ Exp_logE = function (z, x) {
 }
 
 #' @export
-Exp_mfd.manifold_logEuclidean = function (mfd, p, v, ...) {
+Exp_mfd.manifold_logE = function (mfd, p, v, ...) {
   Exp_logE(z = v, x = p)
 }
 
@@ -234,7 +234,7 @@ Log_logE = function (x, y) {
 }
 
 #' @export
-Log_mfd.manifold_logEuclidean = function (mfd, p, q, ...) {
+Log_mfd.manifold_logE = function (mfd, p, q, ...) {
   Log_logE(x = p, y = q)
 }
 
@@ -280,7 +280,7 @@ pt_logE = function (p, q, x) {
 }
 
 #' @export
-ptransport.manifold_logEuclidean = function (mfd, from, to, v, ...) {
+ptransport.manifold_logE = function (mfd, from, to, v, ...) {
   pt_logE(p = from, q = to, x = v)
 }
 
@@ -322,7 +322,7 @@ basis_logE = function (p) {
 }
 
 #' @export
-basis.manifold_logEuclidean = function (mfd, p, ...) {
+basis.manifold_logE = function (mfd, p, ...) {
   basis_logE(p)
 }
 
@@ -403,7 +403,7 @@ Riem_metric_logE = function (p, v, w) {
 }
 
 #' @export
-Riem_metric.manifold_logEuclidean = function (mfd, p, v, w, ...) {
+Riem_metric.manifold_logE = function (mfd, p, v, w, ...) {
   Riem_metric_logE(p, v, w)
 }
 
@@ -424,8 +424,60 @@ Hess_logE = function (x, p, V) {
 #' Riemannian Hessian vector action Hess(0.5 * d(., p)^2)(x)[v]
 #' 
 #' @export
-Hessian.manifold_logEuclidean = function (mfd, p, x, V, ...) {
+Hessian.manifold_logE = function (mfd, p, x, V, ...) {
   Hess_logE(x = x, p = p, V = V)
 }
+
+#' Fast Fréchet mean computation for log-Euclidean space
+#' 
+#' @param x an \eqn{n \times m \times m} array of SPD matrices
+#' @param method either "specialized" (default), which uses specialized algorithm
+#'               for log-Euclidean geometry, or "SGD" which uses generic Riemannian
+#'               SGD
+#' @return the Fréchet mean, as an \eqm{m \times m} matrix 
+#' 
+#' @examples 
+#' mfd = manifold_logE()
+#' x = array(NA, dim = c(10, 3, 3))
+#' for (i in 1:10) x[i,,] = crossprod(matrix(rnorm(9), ncol = 3)) + diag(0.1, 3)
+#' frechet_mean(mfd, x)
+#' frechet_mean(mfd, x, method = "SGD", max.iter = 50)
+#' 
+#' @export
+frechet_mean.manifold_logE = function (mfd, x, method = c("specialized", "SGD"), ...) {
+  method = match.arg(method)
+  
+  if (method == "SGD") {
+    return (frechet_mean.default(mfd, x, ...))
+  }
+  
+  if (length(dim(x)) == 2) {
+    return (x)
+  } else if (length(dim(x)) == 3) {
+    n = dim(x)[1]
+    m = dim(x)[2]
+    if (n == 1) return (x[1,,])
+  } else {
+    stop("frechet_mean: the dimension x must either be 2 or 3 for log-Euclidean 
+         geometry")
+  }
+  Log_avg = matrix(0, nrow = m, ncol = m)
+  for (i in 1:n) {
+    Log_avg = Log_avg + logm(x[i,,]) / n
+  }
+  mu_hat = expm(Log_avg)
+  
+  return (mu_hat)
+}
+
+
+
+
+
+
+
+
+
+
 
 
