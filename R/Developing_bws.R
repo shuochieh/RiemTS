@@ -252,7 +252,6 @@ Christoffel_BWS = function (t, U, param) {
 #' @param Sigma2 end point
 #' @param V tangent vector, identified as a symmetric matrix, at the starting point
 #' 
-#' @export
 pt_bws_core = function (Sigma1, Sigma2, V, method = "adams") {
   p = dim(Sigma1)[1]
   times = seq(0, 1, length.out = 101)
@@ -457,6 +456,86 @@ Riem_metric.manifold_BWS = function (mdf, p, v, w, ...) {
 #' @param V  tangent vector(s) at x (\eqn{m \times m} or \eqn{n \times m \times m} arrays)
 #' 
 # To be done...
+
+
+#' Fast Frèchet mean computation for Bures--Wasserstein space
+#' 
+#' @param x an \eqn{n \times m \times m} array of SPD matrices
+#' @param method either "specialized" (default), which uses specialized algorithm
+#'               (if supported), or "SGD" which uses generic Riemannian SGD
+#' @param max.iter maximum number of iterations
+#' @param tol convergence tolerance
+#' @param verbose whether to print loss along iterations
+#' 
+#' @return the Fréchet mean, as an \eqm{m \times m} matrix 
+#' 
+#' @examples 
+#' mfd = manifold_bws()
+#' x = array(NA, dim = c(10, 3, 3))
+#' for (i in 1:10) x[i,,] = crossprod(matrix(rnorm(9), ncol = 3)) + diag(0.1, 3)
+#' frechet_mean(mfd, x, verbose = TRUE)
+#' frechet_mean(mfd, x, method = "SGD", verbose = TRUE)
+#' 
+#' @references 
+#'  Álvarez-Esteban, P. C., del Barrio, E., Cuesta-Albertos, J. A., & Matrán, C. (2016). 
+#'  A fixed-point approach to barycenters in Wasserstein space.
+#'  \emph{Journal of Mathematical Analysis and Applications}, 441(2), 744--762.
+#' 
+#' @export
+frechet_mean.manifold_BWS = function (mfd, x, method = c("specialized", "SGD"), 
+                                      max.iter = 100, tol = 1e-4, verbose = FALSE,
+                                      ...) {
+  method = match.arg(method)
+  
+  if (method == "SGD") {
+    return (frechet_mean.default(mfd, x, max.iter = max.iter, tol = tol, 
+                                 verbose = verbose, ...))
+  }
+  
+  if (length(dim(x)) == 2) {
+    return (x)
+  } else if (length(dim(x)) == 3) {
+    n = dim(x)[1]
+    m = dim(x)[2]
+    if (n == 1) return (x[1,,])
+  } else {
+    stop("frechet_mean: the dimension of x must be either 2 or 3 for Bures--Wasserstein geometry")
+  }
+  
+  S = x[sample(n, 1),,]
+  for (zz in 1:max.iter) {
+    S_eigen = eigen(S, symmetric = TRUE)
+    S_half = S_eigen$vectors %*% sqrt(diag(pmax(S_eigen$values, 0))) %*% t(S_eigen$vectors)
+    S_ihalf = S_eigen$vectors %*% diag(1 / sqrt(pmax(S_eigen$values, 0))) %*% t(S_eigen$vectors)
+    
+    M = matrix(0, nrow = m, ncol = m)
+    for (i in 1:n) {
+      A = S_half %*% x[i,,] %*% S_half
+      A_eigen = eigen(A, symmetric = TRUE)
+      
+      A_half = A_eigen$vectors %*% sqrt(diag(pmax(A_eigen$values, 0))) %*% t(A_eigen$vectors)
+      
+      M = M + (A_half / n)
+    }
+    
+    S_new = S_ihalf %*% (M %*% M) %*% S_ihalf
+    
+    
+    loss = mean(sum((S_new - S)^2)) # normalized Frobenius 
+    if (verbose) {
+      cat("frechet_mean:", class(mfd)[1], "iter", zz, "(fixed point) loss:",
+          sprintf("%.4f", loss), "\n")
+    }
+    
+    if (loss < tol) {
+      S = S_new
+      break
+    }
+    S = S_new
+  }
+  
+  return (S)
+}
 
 
 

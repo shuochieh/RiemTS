@@ -10,16 +10,6 @@ NULL
 #' Construct a manifold object. Points on this manifold are unit-norm vectors.
 #'
 #' @return an object of class `c("manifold_sphere", "manifold")`
-#' @examples
-#' mfd = manifold_sphere()
-#' x = c(1, 0, 0)
-#' y = c(0, 1, 0)
-#'
-#' geod(mfd, x, y)                 # pi / 2, a quarter turn apart
-#'
-#' # batches of points work the same way, as an (n by q) matrix
-#' X = rbind(c(1, 0, 0), c(0, 0, 1))
-#' geod(mfd, X, y)
 #' @export
 manifold_sphere = function() {
   structure(list(point_ndim = 1), class = c("manifold_sphere", "manifold"))
@@ -31,13 +21,6 @@ manifold_sphere = function() {
 #' positive-definite (m by m) matrices.
 #'
 #' @return an object of class `c("manifold_BWS", "manifold")`
-#' @examples
-#' mfd = manifold_bws()
-#' A = matrix(rnorm(9), 3, 3); A = A %*% t(A) + diag(3)
-#' B = matrix(rnorm(9), 3, 3); B = B %*% t(B) + diag(3)
-#' geod(mfd, A, B)                 # geodesic (Bures-Wasserstein) distance
-#' v = Log_map(mfd, B, A)          # tangent vector at A pointing towards B
-#' Exp_map(mfd, v, A)              # maps back to (approximately) B
 #' @export
 manifold_bws = function() {
   structure(list(point_ndim = 2), class = c("manifold_BWS", "manifold"))
@@ -49,13 +32,6 @@ manifold_bws = function() {
 #' positive-definite (m by m) matrices.
 #'
 #' @return an object of class `c("manifold_logEuclidean", "manifold")`
-#' @examples
-#' mfd = manifold_logE()
-#' A = matrix(rnorm(9), 3, 3); A = A %*% t(A) + diag(3)
-#' B = matrix(rnorm(9), 3, 3); B = B %*% t(B) + diag(3)
-#' geod(mfd, A, B)                 # geodesic (Bures-Wasserstein) distance
-#' v = Log_map(mfd, B, A)          # tangent vector at A pointing towards B
-#' Exp_map(mfd, v, A)              # maps back to (approximately) B
 #' @export
 manifold_logE = function() {
   structure(list(point_ndim = 2), class = c("manifold_logE", "manifold"))
@@ -68,10 +44,6 @@ manifold_logE = function() {
 #'
 #' @param r rank of the projectors; if NULL it is inferred per-call from the data
 #' @return an object of class `c("manifold_grassmann", "manifold")`
-#' @examples
-#' 
-#' TO BE COMPLETED
-#'
 #' @export
 manifold_grassmann = function (r = NULL) {
   structure(list(point_ndim = 2, r = r), class = c("manifold_grassmann", "manifold"))

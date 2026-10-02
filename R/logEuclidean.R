@@ -10,7 +10,6 @@ library(expm)
 #' y = crossprod(matrix(rnorm(9), 3, 3)) + diag(0.1, 3)
 #' geod_logE(x, y)
 #' 
-#' @export
 geod_logE = function (x, y) {
   if (length(dim(x)) == 3) {
     nx = dim(x)[1]
@@ -158,6 +157,15 @@ diff_explog = function (P, Q, type = "exp") {
 #' z = crossprod(matrix(rnorm(9), 3, 3)) * 0.1
 #' Exp_logE(z, x)
 #' 
+#' @references 
+#'   Arsigny, V., Fillard, P., Pennec, X., & Ayache, N. (2007). 
+#'   Geometric means in a novel vector space structure on symmetric positive-definite matrices. 
+#'   \emph{SIAM Journal on Matrix Analysis and Applications}, 29(1), 328--347. 
+#'   
+#'   Wagner vom Berg, G., Röhr, V., Platt, D., & Blankertz, B. (2024). 
+#'   A new canonical log-Euclidean kernel for symmetric positive definite matrices for EEG analysis. 
+#'   \emph{IEEE Transactions on Biomedical Engineering}. 
+#' 
 #' @export
 Exp_logE = function (z, x) {
   if (length(dim(z)) == 3) {
@@ -203,6 +211,15 @@ Exp_mfd.manifold_logE = function (mfd, p, v, ...) {
 #' y = crossprod(matrix(rnorm(9), 3, 3)) + diag(1, 3)
 #' Log_logE(x, y)
 #'  
+#' @references 
+#'   Arsigny, V., Fillard, P., Pennec, X., & Ayache, N. (2007). 
+#'   Geometric means in a novel vector space structure on symmetric positive-definite matrices. 
+#'   \emph{SIAM Journal on Matrix Analysis and Applications}, 29(1), 328--347. 
+#'   
+#'   Wagner vom Berg, G., Röhr, V., Platt, D., & Blankertz, B. (2024). 
+#'   A new canonical log-Euclidean kernel for symmetric positive definite matrices for EEG analysis. 
+#'   \emph{IEEE Transactions on Biomedical Engineering}. 
+#'   
 #' @export
 Log_logE = function (x, y) {
   if (length(dim(y)) == 3) {
@@ -251,6 +268,10 @@ Log_mfd.manifold_logE = function (mfd, p, q, ...) {
 #' v = matrix(rnorm(9), ncol = 3)
 #' v = 0.5 * (v + t(v))
 #' pt_logE(p, q, v)
+#' 
+#' @references Thanwerdas, Y., and Pennec, X. (2023). O(n)-invariant Riemannian 
+#'   metrics on SPD matrices. \emph{Linear Algebra and its Applications}, 
+#'   661: 163-201. 
 #' 
 #' @export
 pt_logE = function (p, q, x) {
@@ -443,6 +464,11 @@ Hessian.manifold_logE = function (mfd, p, x, V, ...) {
 #' frechet_mean(mfd, x)
 #' frechet_mean(mfd, x, method = "SGD", max.iter = 50)
 #' 
+#' @references 
+#'   Arsigny, V., Fillard, P., Pennec, X., & Ayache, N. (2007). 
+#'   Geometric means in a novel vector space structure on symmetric positive-definite matrices. 
+#'   \emph{SIAM Journal on Matrix Analysis and Applications}, 29(1), 328--347. 
+#' 
 #' @export
 frechet_mean.manifold_logE = function (mfd, x, method = c("specialized", "SGD"), ...) {
   method = match.arg(method)
@@ -458,7 +484,7 @@ frechet_mean.manifold_logE = function (mfd, x, method = c("specialized", "SGD"),
     m = dim(x)[2]
     if (n == 1) return (x[1,,])
   } else {
-    stop("frechet_mean: the dimension x must either be 2 or 3 for log-Euclidean 
+    stop("frechet_mean: the dimension x must be either 2 or 3 for log-Euclidean 
          geometry")
   }
   Log_avg = matrix(0, nrow = m, ncol = m)

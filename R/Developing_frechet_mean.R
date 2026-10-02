@@ -50,7 +50,7 @@ mean_tangent = function (mfd, v) {
 #' @param mfd a manifold object
 #' @param x an (n by ...) data
 #' @param tau step size
-#' @param tol covergence tolerance
+#' @param tol convergence tolerance
 #' @param max.iter maximum number of iterations
 #' @param batch_size NULL for full-batch gradient descent; a value in (0, 1]
 #'    for a proportion of the data; a value > 1 for an absolute subsample count
@@ -59,8 +59,6 @@ mean_tangent = function (mfd, v) {
 #' @param verbose if TRUE, print the loss at each iteration
 #' 
 #' @return the estimated Fréchet mean, a single point on the manifold
-#' 
-#' @examples 
 #' 
 #' @export
 frechet_mean.default = function (mfd, x, tau = 0.1, tol = 1e-6, max.iter = 1000,
@@ -118,7 +116,8 @@ frechet_mean.default = function (mfd, x, tau = 0.1, tol = 1e-6, max.iter = 1000,
 #' 
 #' @param mfd a manifold object
 #' @param x an (n by ...) data
-#' @param method 
+#' @param method either "specialized" (default), which uses specialized algorithm
+#'               (if supported), or "SGD" which uses generic Riemannian SGD
 #' @param tau step size
 #' @param tol covergence tolerance
 #' @param max.iter maximum number of iterations
@@ -129,6 +128,14 @@ frechet_mean.default = function (mfd, x, tau = 0.1, tol = 1e-6, max.iter = 1000,
 #' @param verbose if TRUE, print the loss at each iteration
 #' 
 #' @return the estimated Fréchet mean, a single point on the manifold
+#' 
+#' @examples 
+#' mfd = manifold_bws()
+#' x = array(NA, dim = c(10, 3, 3))
+#' for (i in 1:10) x[i,,] = crossprod(matrix(rnorm(9), ncol = 3)) + diag(0.1, 3)
+#' frechet_mean(mfd, x, verbose = TRUE)
+#' frechet_mean(mfd, x, method = "SGD", verbose = TRUE)
+#' 
 #' @export
 frechet_mean = function (mfd, x, ...) {
   UseMethod("frechet_mean")

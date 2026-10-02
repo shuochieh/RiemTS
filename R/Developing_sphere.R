@@ -479,4 +479,3 @@ Hessian.manifold_sphere = function (mfd, p, x, V, ...) {
 
 
 
-
