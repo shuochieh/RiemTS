@@ -10,6 +10,7 @@ library(expm)
 #' y = crossprod(matrix(rnorm(9), 3, 3)) + diag(0.1, 3)
 #' geod_logE(x, y)
 #' 
+#' @export
 geod_logE = function (x, y) {
   if (length(dim(x)) == 3) {
     nx = dim(x)[1]
@@ -87,6 +88,7 @@ geod.manifold_logE = function (mfd, x, y, ...) {
 #' @param type either "exp" or "log"
 #' @param tol threshold for numerical approximation
 #' 
+#' @noRd
 first_diff_ratio = function (a, type = "exp", tol = 1e-5) {
   L = length(a)
   if (L <= 1) {
@@ -196,6 +198,7 @@ Exp_logE = function (z, x) {
   return (res)
 }
 
+#' @rdname Exp_mfd
 #' @export
 Exp_mfd.manifold_logE = function (mfd, p, v, ...) {
   Exp_logE(z = v, x = p)
@@ -342,6 +345,7 @@ basis_logE = function (p) {
   return (res)
 }
 
+#' @rdname basis
 #' @export
 basis.manifold_logE = function (mfd, p, ...) {
   basis_logE(p)
@@ -423,6 +427,7 @@ Riem_metric_logE = function (p, v, w) {
   return(res)
 }
 
+#' @rdname Riem_metric
 #' @export
 Riem_metric.manifold_logE = function (mfd, p, v, w, ...) {
   Riem_metric_logE(p, v, w)
@@ -442,8 +447,7 @@ Hess_logE = function (x, p, V) {
   return (V) # Hessian is identity
 }
 
-#' Riemannian Hessian vector action Hess(0.5 * d(., p)^2)(x)[v]
-#' 
+#' @rdname Hessian
 #' @export
 Hessian.manifold_logE = function (mfd, p, x, V, ...) {
   Hess_logE(x = x, p = p, V = V)
@@ -496,9 +500,52 @@ frechet_mean.manifold_logE = function (mfd, x, method = c("specialized", "SGD"),
   return (mu_hat)
 }
 
+#' @rdname tangent_to_vec
+#' @export
+tangent_to_vec.manifold_logE = function (mfd, v, p, E, ...) {
+  mfd_dim = dim(E)[1]
+  if (is.matrix(v)) {
+    n = 1
+    v = array(v, dim = c(1, dim(v)))
+  } else if (length(dim(v)) == 3) {
+    n = dim(v)[1]
+  } else {
+    stop("tangent_to_vec: dimension of v must be either 2 or 3")
+  }
+  
+  res = array(NA, dim = c(n, mfd_dim))
+  for (i in 1:n) {
+    res[i,] = Riem_metric_logE(p = p, v = v[i,,], w = E)
+  }
+  if (n == 1) {
+    res = res[1,]
+  }
+  
+  return (res)
+}
 
-
-
+#' @rdname vec_to_tangent
+#' @export
+vec_to_tangent.manifold_logE = function (mfd, v_coord, p, E, ...) {
+  if (is.vector(v_coord)) {
+    n_v = 1
+    v_coord = matrix(v_coord, nrow = 1)
+  } else if (is.matrix(v_coord)) {
+    n_v = nrow(v_coord)
+  } else {
+    stop("vec_to_tangent: v_coord must be either vector or matrix")
+  }
+  m = dim(p)[1]
+  
+  E_mat = t(matrix(aperm(E, c(2, 3, 1)), nrow = m * m))
+  res_mat = v_coord %*% E_mat
+  res = array(res_mat, dim = c(n_v, m, m))
+  if (n_v == 1) {
+    res = res[1,,]
+  }
+  
+  return (res)
+}
 
 
 

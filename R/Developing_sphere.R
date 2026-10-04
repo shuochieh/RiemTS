@@ -11,7 +11,7 @@ library(Matrix)
 #' is_on_sphere(c(1, 0, 0))
 #' is_on_sphere(c(1, 1, 0))
 #' 
-#' @export
+#' @noRd
 is_on_sphere = function(x, tol = 1e-6) {
   # Treat vector as 1-row matrix to unify norm calculation
   if (is.vector(x)) {
@@ -100,6 +100,7 @@ geod_sphere = function (x, y, tol = 1e-6) {
   return (res)
 }
 
+#' @rdname geod
 #' @export
 geod.manifold_sphere = function(mfd, x, y, ...) geod_sphere(x, y, ...)
 
@@ -172,6 +173,7 @@ Exp_sphere = function (x, mu, tol = 1e-4) {
   return(res)
 }
 
+#' @rdname Exp_mfd
 #' @export
 Exp_mfd.manifold_sphere = function (mfd, p, v, ...) {
   Exp_sphere(mu = p, x = v, ...)
@@ -258,11 +260,13 @@ Log_sphere = function (x, mu, tol = 1e-4, tol_antipodal = 1e-7) {
   return (res)
 }
 
+#' @rdname Log_mfd
 #' @export
 Log_mfd.manifold_sphere = function (mfd, p, q, ...) Log_sphere(x = q, mu = p, ...)
 
 #' Tangency check for the sphere
 #' 
+#' @noRd
 tangency_check_sphere = function (x, V, tol = 1e-8) {
   if (is.vector(V)) {
     V = matrix(V, nrow = 1)
@@ -340,6 +344,7 @@ pt_sphere = function(x, y, V, tol = 1e-8) {
   return (res)
 }
 
+#' @rdname ptransport
 #' @export
 ptransport.manifold_sphere = function(mfd, from, to, v, ...) {
   pt_sphere(from, to, v, ...)
@@ -360,6 +365,7 @@ basis_sphere = function(mu) {
   return(t(B))
 }
 
+#' @rdname basis
 #' @export
 basis.manifold_sphere = function (mfd, p, ...) {
   basis_sphere(p)
@@ -401,6 +407,7 @@ Riem_metric_sphere = function (p, v, w, ...) {
   }
 }
 
+#' @rdname Riem_metric
 #' @export
 Riem_metric.manifold_sphere = function (mfd, p, v, w, ...) {
   Riem_metric_sphere(p, v, w, ...)
@@ -472,10 +479,38 @@ Hess_sphere = function (x, mu, V, tol = 1e-8) {
   return (res)
 }
 
+#' @rdname Hessian
 #' @export
 Hessian.manifold_sphere = function (mfd, p, x, V, ...) {
   Hess_sphere(mu = p, x = x, V = V, ...)
 }
 
+#' @rdname tangent_to_vec 
+#' @export
+tangent_to_vec.manifold_sphere = function (mfd, v, p, E, ...) {
+  if (is.vector(v)) {
+    return (c(E %*% v))
+  } else if (is.matrix(v)) {
+    n_v = dim(v)[1]
+    coords = v %*% t(E)
+    if (n_v == 1) {
+      coords = coords[1,]
+    }
+    return (coords)
+  }
+}
+
+#' @rdname vec_to_tangent
+#' @export
+vec_to_tangent.manifold_sphere = function (mfd, v_coord, p, E, ...) {
+  res = v_coord %*% E
+  if (is.vector(v_coord)) {
+    res = res[1,]
+  } else if (is.matrix(v_coord) && dim(v_coord)[1] == 1) {
+    res = res[1,]
+  } 
+  
+  return (res)
+}
 
 

@@ -2,8 +2,45 @@ library(maotai)
 library(expm)
 library(deSolve)
 
+#' Fast lyapunov solver when coefficient matrix is symmetric
+#' 
+#' Solves \eqn{AX + XA^{\top} = Q}.
+#' When A is a symmetric matrix, a faster routine is used
+#' 
+#' @param A
+#' @param Q
+#' 
+#' @examples 
+#' A = crossprod(matrix(rnorm(500 * 500, sd = 0.5), ncol = 500)) + diag(0.5, 500)
+#' X = matrix(rnorm(500 * 500, sd = 0.5), ncol = 500)
+#' X = 0.5 * (X + t(X))
+#' Q = A %*% X + X %*% A
+#' 
+#' norm(fast_lyapunov(A, Q) - X, "F")
+#' 
+#' @export
+fast_lyapunov = function (A, Q) {
+  if (!isSymmetric.matrix(A)) {
+    return (lyapunov(A, Q))
+  }
+  
+  temp = eigen(A)
+  P = temp$vectors
+  D = temp$values
+  
+  aux = outer(D, D, FUN = "+")
+  M = t(P) %*% Q %*% P
+  M = M / aux
+  
+  res = P %*% M %*% t(P)
+  
+  return (res)
+}
+
+
 #' Geodesic distance between two SPD matrices in Bures--Wasserstein
 #' 
+#' @noRd
 geod_BWS_core = function (x, y) {
   # drop unnecessary dimension
   if (length(dim(x)) == 3 && dim(x)[1] == 1) {
@@ -85,6 +122,7 @@ geod_BWS = function (x, y) {
   return (res)
 }
 
+#' @rdname geod
 #' @export
 geod.manifold_BWS = function (mfd, x, y, ...) {
   geod_BWS(x, y)
@@ -92,12 +130,13 @@ geod.manifold_BWS = function (mfd, x, y, ...) {
 
 #' Exponential map on the Bures--Wasserstein geometry
 #' 
+#' @noRd
 Exp_BWS_core = function (z, x) {
   if (length(dim(x)) == 3 && dim(x)[1] == 1) {
     x = x[1,,]
   }
   
-  L = lyapunov(x, z)
+  L = lyapunov_fast(x, z)
   d = dim(z)[1]
   L = L + diag(1, d)
   res = L %*% x %*% L
@@ -151,6 +190,7 @@ Exp_mfd.manifold_BWS = function (mfd, p, v, ...) {
 
 #' Logarithm map on the Bures--Wasserstein geometry
 #' 
+#' @noRd
 Log_BWS_core = function (x, y, check_cut = FALSE) {
   if (length(dim(x)) == 3 && dim(x)[1] == 1) {
     x = x[1,,]
@@ -158,7 +198,7 @@ Log_BWS_core = function (x, y, check_cut = FALSE) {
   
   if (check_cut) {
     # check if y is in the injectivity radius
-    test_y = lyapunov(x, y)
+    test_y = fast_lyapunov(x, y)
     test_y = test_y + diag(1, nrow(y))
     eig = eigen(test_y, symmetric = T, only.values = T)$values
     if (!all(eig > 0)) {
@@ -212,11 +252,13 @@ Log_BWS = function (x, y, check_cut = FALSE) {
   return (res)
 }
 
+#' @rdname Log_mfd
 #' @export
 Log_mfd.manifold_BWS = function (mfd, p, q, ...) {
   Log_BWS(x = p, y = q, ...)
 }
 
+#' @noRd
 Christoffel_BWS_core = function (Sigma, X, Y) {
   Lx = lyapunov(Sigma, X)
   Ly = lyapunov(Sigma, Y)
@@ -227,6 +269,7 @@ Christoffel_BWS_core = function (Sigma, X, Y) {
   return (res)
 }
 
+#' @noRd
 Christoffel_BWS = function (t, U, param) {
   
   Sigma1 = param$Sigma1
@@ -252,6 +295,7 @@ Christoffel_BWS = function (t, U, param) {
 #' @param Sigma2 end point
 #' @param V tangent vector, identified as a symmetric matrix, at the starting point
 #' 
+#' @noRd
 pt_bws_core = function (Sigma1, Sigma2, V, method = "adams") {
   p = dim(Sigma1)[1]
   times = seq(0, 1, length.out = 101)
@@ -304,6 +348,7 @@ pt_BWS = function (p, q, x, method = "adams") {
   return (res)
 }
 
+#' @rdname ptransport
 #' @export
 ptransport.manifold_BWS = function (mfd, from, to, v, ...) {
   pt_BWS(p = from, q = to, x = V, ...)
@@ -352,6 +397,7 @@ basis_BWS = function (p) {
   return (E)
 }
 
+#' @rdname basis
 #' @export
 basis.manifold_BWS = function (mfd, p, ...) {
   basis_BWS(p)
@@ -419,20 +465,31 @@ Riem_metric_BWS = function (p, v, w) {
   
   # --- Computation ---
   if (n_v == 1) {
-    v_lyapunov = lyapunov(p, v[1,,])
+    v_lyapunov = fast_lyapunov(p, v[1,,])
+    w_mat = matrix(aperm(w, c(2, 3, 1)), nrow = m * m)
+    res = 0.5 * c(as.vector(v_lyapunov) %*% w_mat)
+    
+    return (res)
   } else if (n_w == 1) {
-    w_lyapunov = lyapunov(p, w[1,,])
+    w_lyapunov = fast_lyapunov(p, w[1,,])
+    v_mat = matrix(aperm(v, c(2, 3, 1)), nrow = m * m)
+    res = 0.5 * c(as.vector(w_lyapunov) %*% v_mat)
+    
+    return (res)
   }
+
   res = numeric(n)
   for (i in 1:n) {
-    if (n_v == 1) {
-      res[i] = 0.5 * sum(diag(v_lyapunov %*% w[i,,]))
-    } else if (n_w == 1) {
-      res[i] = 0.5 * sum(diag(w_lyapunov %*% v[i,,]))
-    } else {
-      v_lyapunov = lyapunov(p, v[i,,])
-      res[i] = 0.5 * sum(diag(v_lyapunov %*% w[i,,]))
-    }
+    v_lyapunov = lyapunov(p, v[i,,])
+    res[i] = 0.5 * sum(diag(v_lyapunov %*% w[i,,]))
+    # if (n_v == 1) {
+    #   res[i] = 0.5 * sum(diag(v_lyapunov %*% w[i,,]))
+    # } else if (n_w == 1) {
+    #   res[i] = 0.5 * sum(diag(w_lyapunov %*% v[i,,]))
+    # } else {
+    #   v_lyapunov = lyapunov(p, v[i,,])
+    #   res[i] = 0.5 * sum(diag(v_lyapunov %*% w[i,,]))
+    # }
   }
   
   if (n == 1) {
@@ -441,6 +498,7 @@ Riem_metric_BWS = function (p, v, w) {
   return (res)
 }
 
+#' @rdname Riem_metric
 #' @export
 Riem_metric.manifold_BWS = function (mdf, p, v, w, ...) {
   Riem_metric_BWS(p = p, v = v, w = w)
@@ -537,6 +595,53 @@ frechet_mean.manifold_BWS = function (mfd, x, method = c("specialized", "SGD"),
   return (S)
 }
 
+#' @rdname tangent_to_vec 
+#' @export
+tangent_to_vec.manifold_BWS = function (mfd, v, p, E, ...) {
+  mfd_dim = dim(E)[1]
+  if (is.matrix(v)) {
+    n = 1
+    v = array(v, dim = c(1, dim(v)))
+  } else if (length(dim(v)) == 3) {
+    n = dim(v)[1]
+  } else {
+    stop("tangent_to_vec: dimension of v must be either 2 or 3")
+  }
+  
+  res = array(NA, dim = c(n, mfd_dim))
+  for (i in 1:n) {
+    res[i,] = Riem_metric_BWS(p = p, v = v[i,,], w = E)
+  }
+  if (n == 1) {
+    res = res[1,]
+  }
+  
+  return (res)
+}
+
+
+#' @rdname vec_to_tangent
+#' @export
+vec_to_tangent.manifold_BWS = function (mfd, v_coord, p, E, ...) {
+  if (is.vector(v_coord)) {
+    n_v = 1
+    v_coord = matrix(v_coord, nrow = 1)
+  } else if (is.matrix(v_coord)) {
+    n_v = nrow(v_coord)
+  } else {
+    stop("vec_to_tangent: v_coord must be either vector or matrix")
+  }
+  m = dim(p)[1]
+  
+  E_mat = t(matrix(aperm(E, c(2, 3, 1)), nrow = m * m))
+  res_mat = v_coord %*% E_mat
+  res = array(res_mat, dim = c(n_v, m, m))
+  if (n_v == 1) {
+    res = res[1,,]
+  }
+  
+  return (res)
+}
 
 
 

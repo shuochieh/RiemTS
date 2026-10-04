@@ -22,7 +22,7 @@ manifold_sphere = function() {
 #'
 #' @return an object of class `c("manifold_BWS", "manifold")`
 #' @export
-manifold_bws = function() {
+manifold_BWS = function() {
   structure(list(point_ndim = 2), class = c("manifold_BWS", "manifold"))
 }
 
@@ -49,6 +49,7 @@ manifold_grassmann = function (r = NULL) {
   structure(list(point_ndim = 2, r = r), class = c("manifold_grassmann", "manifold"))
 }
 
+#' @noRd
 n_points = function (mfd, x) {
   if (mfd$point_ndim == 1) {
     return (nrow(x))
@@ -57,6 +58,7 @@ n_points = function (mfd, x) {
   }
 }
 
+#' @noRd
 get_point = function (mfd, x, i) {
   if (mfd$point_ndim == 1) {
     return (x[i,])
@@ -65,6 +67,7 @@ get_point = function (mfd, x, i) {
   }
 }
 
+#' @noRd
 subset_points = function (mfd, x, idx) {
   if (mfd$point_ndim == 1) {
     return(x[idx, , drop = FALSE])
@@ -151,6 +154,14 @@ Log_mfd = function (mfd, p, q, ...) UseMethod("Log_mfd")
 #' @export
 ptransport = function (mfd, from, to, v, ...) UseMethod("ptransport")
 
+#' Construct an orthonormal basis for the tangent space at p
+#' 
+#' @param mfd a manifold object
+#' @param p a point on the manifold
+#' 
+#' @export
+basis = function (mfd, p, ...) UseMethod("basis")
+
 #' Evaluate the Riemannian metric between two (batches of) tangent vectors at a
 #' point `p`
 #' 
@@ -168,6 +179,31 @@ ptransport = function (mfd, from, to, v, ...) UseMethod("ptransport")
 #' 
 #' @export
 Riem_metric = function (mfd, p, v, w, ...) UseMethod("Riem_metric")
+
+#' Turn tangent vectors in coordinates with respect to a given orthonormal basis
+#' 
+#' @param mfd a manifold object
+#' @param v tangent vectors
+#' @param p base point 
+#' @param E basis
+#' 
+#' @return a vector or matrix containing the coordinates
+#' 
+#' @export
+tangent_to_vec = function (mfd, v, p, E, ...) UseMethod("tangent_to_vec")
+
+#' Turn a coordinate in the tangent space into a generic tangent space object
+#' 
+#' @param mfd a manifold object
+#' @param v_coord tangent vectors (in coordinates)
+#' @param p base point
+#' @param E basis
+#' 
+#' @return tangent vectors
+#' 
+#' @export
+vec_to_tangent = function (mfd, v_coord, p, E, ...) UseMethod("vec_to_tangent")
+
 
 
 
