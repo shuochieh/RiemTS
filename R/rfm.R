@@ -23,6 +23,8 @@
 #'   Estimation of latent factors for high-dimensional time series. 
 #'   Biometrika, 98(4), 901--918. 
 #' 
+#' @keywords internal
+#' @export
 LYB_fm = function (x, r = NULL, h = 1, demean = TRUE, R = NULL) {
   n = nrow(x)
   p = ncol(x)
