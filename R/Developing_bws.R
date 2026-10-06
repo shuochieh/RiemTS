@@ -9,7 +9,9 @@ library(deSolve)
 #' 
 #' @param A
 #' @param Q
-#' 
+#' @param P_coordinate whether the output is transformed by \eqn{PXP^{\top}}.
+#'                     Default is TRUE, which is the solution to the Lyapunov
+#'                     equation. Use this option with FALSE with caution
 #' @examples 
 #' A = crossprod(matrix(rnorm(500 * 500, sd = 0.5), ncol = 500)) + diag(0.5, 500)
 #' X = matrix(rnorm(500 * 500, sd = 0.5), ncol = 500)
@@ -19,7 +21,7 @@ library(deSolve)
 #' norm(fast_lyapunov(A, Q) - X, "F")
 #' 
 #' @export
-fast_lyapunov = function (A, Q) {
+fast_lyapunov = function (A, Q, P_coordinate = TRUE) {
   if (!isSymmetric.matrix(A)) {
     return (lyapunov(A, Q))
   }
@@ -31,6 +33,10 @@ fast_lyapunov = function (A, Q) {
   aux = outer(D, D, FUN = "+")
   M = t(P) %*% Q %*% P
   M = M / aux
+  
+  if (!P_coordinate) {
+    return (list("M" = M, "P" = P))
+  }
   
   res = P %*% M %*% t(P)
   
@@ -371,29 +377,23 @@ basis_BWS = function (p) {
   P = model$vectors
   
   E = array(NA, dim = c(d * (d + 1) / 2, d, d))
-  # E_lyapunov = array(NA, dim = c(d * (d + 1) / 2, d, d))
+  
   counter = 0
   for (i in 1:d) {
     for (j in i:d) {
       counter = counter + 1
       S = matrix(0, ncol = d, nrow = d)
-      # S_tilde = matrix(0, ncol = d, nrow = d)
+      
       if (i == j) {
         S[i,j] = sqrt(2 * (lambdas[i] + lambdas[j]))
-        # S_tilde[i,j] = 1 / sqrt(lambdas[i])
       } else {
         S[i,j] = sqrt(lambdas[i] + lambdas[j])
         S[j,i] = sqrt(lambdas[i] + lambdas[j])
-        
-        # S_tilde[i,j] = 1 / sqrt(lambdas[i] + lambdas[j])
-        # S_tilde[j,i] = 1 / sqrt(lambdas[i] + lambdas[j])
       }
       E[counter,,] = P %*% S %*% t(P)
-      # E_lyapunov[counter,,] = P %*% S_tilde %*% t(P)
     }
   }
   
-  # return (list("E" = E, "E_lyapunov" = E_lyapunov))
   return (E)
 }
 
@@ -480,16 +480,8 @@ Riem_metric_BWS = function (p, v, w) {
 
   res = numeric(n)
   for (i in 1:n) {
-    v_lyapunov = lyapunov(p, v[i,,])
+    v_lyapunov = fast_lyapunov(p, v[i,,])
     res[i] = 0.5 * sum(diag(v_lyapunov %*% w[i,,]))
-    # if (n_v == 1) {
-    #   res[i] = 0.5 * sum(diag(v_lyapunov %*% w[i,,]))
-    # } else if (n_w == 1) {
-    #   res[i] = 0.5 * sum(diag(w_lyapunov %*% v[i,,]))
-    # } else {
-    #   v_lyapunov = lyapunov(p, v[i,,])
-    #   res[i] = 0.5 * sum(diag(v_lyapunov %*% w[i,,]))
-    # }
   }
   
   if (n == 1) {
@@ -599,6 +591,7 @@ frechet_mean.manifold_BWS = function (mfd, x, method = c("specialized", "SGD"),
 #' @export
 tangent_to_vec.manifold_BWS = function (mfd, v, p, E, ...) {
   mfd_dim = dim(E)[1]
+  d = dim(E)[2]
   if (is.matrix(v)) {
     n = 1
     v = array(v, dim = c(1, dim(v)))
@@ -608,10 +601,43 @@ tangent_to_vec.manifold_BWS = function (mfd, v, p, E, ...) {
     stop("tangent_to_vec: dimension of v must be either 2 or 3")
   }
   
+  
+  # Computing coordinate values using Riem_metric (or Riem_metric_BWS) can be
+  # too slow for large dimensional matrix. Here we employ a trick
+  base_eigen = eigen(p, symmetric = TRUE)
+  P = base_eigen$vectors
+  D = base_eigen$values
+  aux = outer(D, D, FUN = "+")
+  
+  # E_aux = array(NA, dim = dim(E))
+  # for (j in 1:mfd_dim) {
+  #   E_aux[j,,] = t(P) %*% E[j,,] %*% P
+  # }
+  E_3d = aperm(E, c(1, 3, 2))
+  E_flat_R = matrix(E_3d, nrow = mfd_dim * d, ncol = d)
+  E_P = E_flat_R %*% P
+  
+  E_P_3d = array(E_P, c(mfd_dim, d, d))
+  E_P_3d = aperm(E_P_3d, c(2, 1, 3))
+  E_P_flat_L = matrix(E_P_3d, nrow = d, ncol = mfd_dim * d)
+  
+  E_aux_3d = t(P) %*% E_P_flat_L
+  E_aux_3d = array(E_aux_3d, dim = c(d, mfd_dim, d))
+  E_aux_3d = aperm(E_aux_3d, c(2, 1, 3))
+  E_aux_mat = matrix(E_aux_3d, nrow = mfd_dim, ncol = d * d)
+  
   res = array(NA, dim = c(n, mfd_dim))
   for (i in 1:n) {
-    res[i,] = Riem_metric_BWS(p = p, v = v[i,,], w = E)
+    # Compute M
+    M = t(P) %*% v[i,,] %*% P
+    M = M / aux
+    
+    # for (j in 1:mfd_dim) {
+    #   res[i,j] = 0.5 * sum(diag(M %*% E_aux[j,,]))
+    # }
+    res[i,] = 0.5 * (E_aux_mat %*% as.vector(M))
   }
+  
   if (n == 1) {
     res = res[1,]
   }

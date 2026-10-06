@@ -47,7 +47,7 @@ LYB_fm = function (x, r = NULL, h = 1, demean = TRUE, R = NULL) {
   E_val = model$values
   if (is.null(r)) {
     if (is.null(R)) {
-      R = floor(p / 2)
+      R = min(floor(p / 2), floor(n / 2))
     }
     ratios = E_val[2:(R + 1)] / E_val[1:R]
     r = which.min(ratios)

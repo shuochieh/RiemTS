@@ -1,1 +1,254 @@
-# Structural break detection
+# Structural break detection methods
+
+#' Test statistic of Zhang, Zhu, and Shao (2026)
+#' 
+#' @param mfd a manifold object
+#' @param x data
+#' @param b bandwidth parameter (default is 0.15)
+#' 
+#' @return A list containing
+#' * `Gn` the test statistic
+#' * `idx` the index where the maximum is attained
+#' 
+#' @references 
+#'   Zhang, Y., Zhu, C., & Shao, X. (2026). 
+#'   Change-Point Detection for Object-Valued Time Series. 
+#'   Journal of Business & Economic Statistics, 44(1), 255--269. 
+#' 
+#' @export
+ZZS_test = function (mfd, x, b = 0.15) {
+  n = n_points(mfd, x)
+  
+  A = floor(n * b) + 1
+  B = n - floor(n * b)
+  Z = rep(NA, B - A + 1)
+  
+  for (i in A:B) {
+    Z[i - A  + 1] = sum(geod(mfd, get_point(mfd, x, i), subset_points(mfd, x, B:n))) - 
+      sum(geod(mfd, get_point(mfd, x, i), subset_points(mfd, x, 1:A)))
+  }
+  S = rep(NA, B - A + 1)
+  S_tail = rep(NA, B - A + 1)
+  for (i in A:B) {
+    S[i - A + 1] = sum(Z[1:(i - A + 1)])
+    S_tail[i - A + 1] = sum(Z[(i - A + 1):(B - A + 1)])
+  }
+  
+  res = 0
+  S_all = sum(Z) / (n - 2 * floor(n * b))
+  for (i in A:(B - 1)) {
+    Tn = sum((Z - S_all)[1:(i - A + 1)]) / sqrt(n - 2 * floor(n * b))
+    
+    Vn1 = 0
+    Vn2 = 0
+    for (j in A:i) {
+      Vn1 = Vn1 + (S[j - A + 1] - ((j - floor(n * b)) / (i - floor(n * b))) * S[i - A + 1])^2
+    }
+    
+    for (j in (i + 1):(n - floor(n * b))) {
+      Vn2 = Vn2 + (S_tail[j - A + 1] - 
+                     ((n - floor(n * b) - j + 1) / (n - floor(n * b) - i)) * S_tail[i - A + 2])^2
+    }
+    
+    Vn = (Vn1 + Vn2) / (n - 2 * floor(n * b))^2
+    
+    if (i == A) {
+      res = Tn / sqrt(Vn)
+      idx = i
+    } else {
+      if (res < (Tn / sqrt(Vn))) {
+        res = Tn / sqrt(Vn)
+        idx = i
+      }
+    }
+  }
+  
+  return (list("Gn" = res, "idx" = idx))
+}
+
+#' Generate Wild-Binary Segmentation intervals
+#' 
+#' @param n maximum time index
+#' @param M number of intervals (default is 100)
+#' @param L0 minimum interval length (default is 25)
+#' @param L1 maximum interval length (default in Inf)
+#' 
+#' @returns A \eqn{M \times 2} matrix where the first and second column represent
+#'          the start and end of the intervals, respectively
+#' 
+#' @export
+WBS_intervals = function (n, M = 100, L0 = 25, L1 = Inf) {
+  U = array(NA, dim = c(M, 2))
+  count = 0
+  while (count < M) {
+    a = sample(n, 1)
+    b = sample(n, 1)
+    if (abs(a - b) < L0) {
+      next
+    }
+    if (abs(a - b) > L1) {
+      next
+    }
+    count = count + 1
+    U[count,] = c(min(a, b), max(a, b))
+  }
+  
+  return (U)
+}
+
+#' ZZS in Euclidean space
+#' @noRd
+ZZS_test_Euclidean = function (x, b = 0.15) {
+  n = length(x)
+  
+  A = floor(n * b) + 1
+  B = n - floor(n * b)
+  Z = rep(NA, B - A + 1)
+  
+  for (i in A:B) {
+    Z[i - A + 1] = sum(abs(x[i] - x[B:n])) - sum(abs(x[i] - x[1:A]))
+  }
+  
+  S = rep(NA, B - A + 1)
+  S_tail = rep(NA, B - A + 1)
+  for (i in A:B) {
+    S[i - A + 1] = sum(Z[1:(i - A + 1)])
+    S_tail[i - A + 1] = sum(Z[(i - A + 1):(B - A + 1)])
+  }
+  
+  res = 0
+  for (i in A:(B - 1)) {
+    S_all = sum(Z) / (n - 2 * floor(n * b))
+    Tn = sum((Z - S_all)[1:(i - A + 1)]) / sqrt(n - 2 * floor(n * b))
+    
+    Vn1 = 0
+    Vn2 = 0
+    for (j in A:i) {
+      Vn1 = Vn1 + (S[j - A + 1] - ((j - floor(n * b)) / (i - floor(n * b))) * S[i - A + 1])^2
+    }
+    
+    for (j in (i + 1):(n - floor(n * b))) {
+      Vn2 = Vn2 + (S_tail[j - A + 1] - 
+                     ((n - floor(n * b) - j + 1) / (n - floor(n * b) - i)) * S_tail[i - A + 2])^2
+    }
+    
+    Vn = (Vn1 + Vn2) / (n - 2 * floor(n * b))^2
+    
+    
+    if (i == A) {
+      res = Tn / sqrt(Vn)
+    } else {
+      if (res < (Tn / sqrt(Vn))) {
+        res = Tn / sqrt(Vn)
+      }
+    }
+  }
+  
+  return (res)
+}
+
+#' Simulating thresholds of ZZS-BWS procedure using Euclidean simulations
+#' 
+#' @param n length of time series
+#' @param U intervals 
+#' @param alpha significance level (default: 0.05)
+#' @param b bandwidth parameter (default: 0.15)
+#' @param J number of Monte Carlo simulations (default: 500)
+#' 
+#' @return a value of threshold
+#' 
+#' @export
+ZZS_WBS_thres_sim = function (n, U, alpha = 0.05, J = 500, b = 0.15) {
+  res = rep(0, J)
+  x = array(rnorm(n * J), dim = c(n, J))
+  M = nrow(U)
+  
+  for (j in 1:J) {
+    for (m in 1:M) {
+      slice_idx = U[m,1]:U[m,2]
+      x_slice = x[slice_idx,j]
+      
+      temp = ZZS_test_Euclidean(x_slice, b = b)
+      if (temp > res[j]) {
+        res[j] = temp
+      }
+    }
+  }
+  
+  return (quantile(res, 1 - alpha))
+}
+
+#' Break detection method of Zhang, Zhu, and Shao (2026)
+#' 
+#' Performs wild binary segmentation (WBS) using the test statistic proposed by 
+#' Zhang, Zhu, and Shao (2026) for detecting change points in non-Euclidean time series.
+#'  
+#' @param mfd a manifold object
+#' @param x data
+#' @param U sub-intervals for wild-binary segmentation, typically generated by `WBS_intervals()`
+#' @param thres the threshold value used to declare change points
+#' @param b bandwidth parameter 
+#' 
+#' @returns an integer vector indicating possible change points.
+#' 
+#' @references 
+#'   Zhang, Y., Zhu, C., & Shao, X. (2026). 
+#'   Change-Point Detection for Object-Valued Time Series. 
+#'   \emph{Journal of Business & Economic Statistics}, 44(1), 255--269. 
+#'   
+#' @examples 
+#' set.seed(1)
+#' mfd = manifold_sphere()
+#' x_part1 = t(c(1, 0, 0) + t(matrix(rnorm(300, sd = 0.25), ncol = 3)))
+#' x_part1 = x_part1 / sqrt(rowSums(x_part1^2))
+#' x_part2 = t(c(0, 0, 1) + t(matrix(rnorm(300, sd = 0.25), ncol = 3)))
+#' x_part2 = x_part2 / sqrt(rowSums(x_part2^2))
+#' x = rbind(x_part1, x_part2)
+#' 
+#' U = WBS_intervals(n = 200, M = 15) # generating random intervals
+#' thres = ZZS_WBS_thres_sim(n = 200, U = U, alpha = 0.05) # simulate threshold
+#' point = ZZS_WBS(mfd, x, U, thres = thres) # Run WBS to get the break locations
+#' print(points) # expected to detect near location 100
+#' 
+#' @export
+ZZS_WBS = function (mfd, x, U, thres, b = 0.15) {
+  n = n_points(mfd, x)
+  M = nrow(U)
+  
+  interval_res = array(NA, dim = c(M, 2))
+  for (i in 1:M) {
+    slice_idx = U[i,1]:U[i,2]
+    x_slice = subset_points(mfd, x, slice_idx)
+    temp = ZZS_test(mfd, x_slice, b = b)
+    interval_res[i,] = c(temp$Gn, slice_idx[temp$idx])
+  }
+  
+  stack = list(c(1, n))
+  change_points = integer(0)
+  
+  while (length(stack) > 0) {
+    # Pop the first interval from the stack
+    current_interval = stack[[1]]
+    stack = stack[-1]
+    
+    s = current_interval[1]
+    e = current_interval[2]
+    
+    J = intersect(which(U[,1] > s), which(U[,2] < e))
+    if (length(J) == 0) {
+      next
+    }
+    
+    temp = interval_res[J,,drop = FALSE]
+    if (max(temp[,1]) > thres) {
+      p = temp[which.max(temp[,1]), 2]
+      change_points = c(change_points, p)
+      
+      stack[[length(stack) + 1]] = c(s, p)
+      stack[[length(stack) + 1]] = c(p, e)
+    }
+  }
+  
+  return (change_points)
+}
+
