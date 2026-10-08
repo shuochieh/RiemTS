@@ -45,7 +45,7 @@ LYB_fm = function (x, r = NULL, h = 1, demean = TRUE, R = NULL) {
   }
   
   # eigenanalysis
-  model = eigs_sym(L)
+  model = eigs_sym(L, k = R)
   E_vec = model$vectors
   E_val = model$values
   if (is.null(r)) {
