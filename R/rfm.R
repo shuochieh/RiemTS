@@ -1,4 +1,5 @@
 # Riemannian Factor Model
+library(RSpectra)
 
 #' Factor model of Lam, Yao, and Bathia (2011)
 #' 
@@ -34,7 +35,7 @@ LYB_fm = function (x, r = NULL, h = 1, demean = TRUE, R = NULL) {
   } else {
     means = rep(0, p)
   }
-
+  
   # compute the auxiliary positive definite matrix
   L = 0
   H = h + 1
@@ -44,7 +45,7 @@ LYB_fm = function (x, r = NULL, h = 1, demean = TRUE, R = NULL) {
   }
   
   # eigenanalysis
-  model = eigen(L, symmetric = TRUE)
+  model = eigs_sym(L)
   E_vec = model$vectors
   E_val = model$values
   if (is.null(r)) {

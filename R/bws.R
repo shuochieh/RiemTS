@@ -142,7 +142,7 @@ Exp_BWS_core = function (z, x) {
     x = x[1,,]
   }
   
-  L = lyapunov_fast(x, z)
+  L = fast_lyapunov(x, z)
   d = dim(z)[1]
   L = L + diag(1, d)
   res = L %*% x %*% L
