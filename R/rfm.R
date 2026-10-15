@@ -10,7 +10,7 @@ library(RSpectra)
 #'          auxiliary matrix (default: 1)
 #' @param demean whether to demean the data first (default: TRUE)
 #' @param R maximum number of factors to consider in the ratio estimator (default:
-#'          NULL, in which case p/2 is used, where p is the dimension of data)
+#'          \eqn{\min\{p/2, n/2\}} is used, where \eqn{p} is the dimension of data)
 #' @return A `factor_model` object containing
 #' * `V` estimated loading matrix
 #' * `f_hat` estimated factor process
@@ -18,6 +18,7 @@ library(RSpectra)
 #' * `fitted.val` fitted values (pseudo-predictions)
 #' * `r_hat` number of factors used
 #' * `mean` means of each variable
+#' * `E_val` eigenvalues
 #' 
 #' @references 
 #'   LAM, C., YAO, Q., & BATHIA, N. (2011). 
@@ -45,16 +46,24 @@ LYB_fm = function (x, r = NULL, h = 1, demean = TRUE, R = NULL) {
   }
   
   # eigenanalysis
-  model = eigs_sym(L, k = R)
+  if (is.null(R)) {
+    R = min(floor(p / 2), floor(n / 2)) # default value
+    if (!is.null(r)) {
+      if (r > min(p, n)) {
+        stop("LYB_fm: number of factors exceeding problem dimensions")
+      }
+      R = max(R, r + 1)
+    }
+  }
+  
+  model = eigs_sym(L, k = R + 1)
   E_vec = model$vectors
   E_val = model$values
   if (is.null(r)) {
-    if (is.null(R)) {
-      R = min(floor(p / 2), floor(n / 2))
-    }
     ratios = E_val[2:(R + 1)] / E_val[1:R]
     r = which.min(ratios)
   }
+  
   V = E_vec[,1:r, drop = FALSE]
   
   # Extract factors and residuals
@@ -63,7 +72,8 @@ LYB_fm = function (x, r = NULL, h = 1, demean = TRUE, R = NULL) {
   e_hat = x - fitted.val
   
   res = list("V" = V, "f_hat" = f_hat, "e_hat" = e_hat,
-             "fitted.val" = fitted.val, "r_hat" = r, "means" = means)
+             "fitted.val" = fitted.val, "r_hat" = r, "means" = means,
+             "E_val" = E_val)
   class(res) = "factor_model"
   
   return (res)
@@ -122,6 +132,7 @@ predict.factor_model = function (model, newdata) {
 #' * `e_hat` residuals
 #' * `r_hat` number of factors used
 #' * `means` means of each coordinate (in the tangent space)
+#' * `E_val` eigenvalues
 #' 
 #' @references 
 #'   Huang, S.-C., Chen, R., & Chen, Y. (2026). 
@@ -154,7 +165,7 @@ rfm = function (mfd, x, r = NULL, h = 1, mu = NULL, basis = NULL, demean = TRUE,
   
   res = list("V" = model$V, "mu" = mu, "E" = basis, "f_hat" = model$f_hat, 
              "e_hat" = model$e_hat, "r_hat" = model$r_hat, "means" = model$means,
-             "mfd" = mfd)
+             "E_val" = model$E_val, "mfd" = mfd)
   class(res) = c("riem_factor", "factor_model")
   
   return (res)
