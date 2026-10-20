@@ -7,8 +7,8 @@ library(deSolve)
 #' Solves \eqn{AX + XA^{\top} = Q}.
 #' When A is a symmetric matrix, a faster routine is used
 #'
-#' @param A
-#' @param Q
+#' @param A an \eqn{m \times m} coefficient matrix
+#' @param Q an \eqn{m \times m} right-hand side matrix
 #' @param P_coordinate whether the output is transformed by \eqn{PXP^{\top}}.
 #'                     Default is TRUE, which is the solution to the Lyapunov
 #'                     equation. Use this option with FALSE with caution
@@ -601,10 +601,10 @@ Hessian.manifold_BWS <- function(mfd, p, x, V, ...) {
 #' @param tol convergence tolerance
 #' @param verbose whether to print loss along iterations
 #'
-#' @return the Fréchet mean, as an \eqm{m \times m} matrix
+#' @return the Fréchet mean, as an \eqn{m \times m} matrix
 #'
 #' @examples
-#' mfd <- manifold_bws()
+#' mfd <- manifold_BWS()
 #' x <- array(NA, dim = c(10, 3, 3))
 #' for (i in 1:10) x[i, , ] <- crossprod(matrix(rnorm(9), ncol = 3)) + diag(0.1, 3)
 #' frechet_mean(mfd, x, verbose = TRUE)

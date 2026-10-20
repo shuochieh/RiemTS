@@ -1,7 +1,8 @@
 # Generic manifold interface: constructors + shared array-dispatch helpers 
 
 #' @importFrom maotai lyapunov
-#' @importFrom expm sqrtm expm
+#' @importFrom expm sqrtm expm logm
+#' @importFrom RSpectra eigs_sym
 #' @importFrom deSolve ode
 NULL
 
