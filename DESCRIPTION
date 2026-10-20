@@ -2,7 +2,9 @@ Package: RiemTS
 Type: Package
 Title: Time Series on Riemannian Manifolds
 Version: 0.1.0
-Authors@R: person("Shen", email = "xjxjcldk9@gmail.com", role = c("aut", "cre"))
+Authors@R: c(
+    person("Shuo-Chieh", "Huang", email = "sh1976@stat.rutgers.edu", role = c("aut", "cre")),
+    person("Shen-Hsun", "Liao", email = "xjxjcldk9@gmail.com", role = "aut"))
 Description: Time series toolkit for data supported on Riemannian manifolds. 
     A common interface for various manifold operations (geodesic distance, 
     exponential/logarithm maps, Frechet mean, parallel transport, and Frechet
