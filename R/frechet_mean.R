@@ -9,9 +9,9 @@ determine_batch = function (n, batch_size) {
 
 is_batch = function (mfd, v) {
   if (mfd$point_ndim == 1) {
-    if (!is.matrix(x)) {
+    if (!is.matrix(v)) {
       return (FALSE)
-    } else if (nrow(x) == 1) {
+    } else if (nrow(v) == 1) {
       return (FALSE)
     } else {
       return (TRUE)
@@ -130,7 +130,7 @@ frechet_mean.default = function (mfd, x, tau = 0.1, tol = 1e-6, max.iter = 1000,
 #' @return the estimated Fréchet mean, a single point on the manifold
 #' 
 #' @examples 
-#' mfd = manifold_bws()
+#' mfd = manifold_BWS()
 #' x = array(NA, dim = c(10, 3, 3))
 #' for (i in 1:10) x[i,,] = crossprod(matrix(rnorm(9), ncol = 3)) + diag(0.1, 3)
 #' frechet_mean(mfd, x, verbose = TRUE)

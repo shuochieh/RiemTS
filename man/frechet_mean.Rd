@@ -2,59 +2,43 @@
 % Please edit documentation in R/frechet_mean.R
 \name{frechet_mean}
 \alias{frechet_mean}
-\title{Frechet mean on a manifold via Riemannian (stochastic) gradient descent}
+\title{Fréchet mean on a Riemannian manifold}
 \usage{
-frechet_mean(
-  mfd,
-  x,
-  tau = 0.1,
-  tol = 1e-08,
-  max.iter = 1000,
-  batch_size = NULL,
-  init = NULL,
-  verbose = FALSE
-)
+frechet_mean(mfd, x, ...)
 }
 \arguments{
 \item{mfd}{a manifold object}
 
-\item{x}{an (n by ...) batch of data}
+\item{x}{an (n by ...) data}
+
+\item{method}{either "specialized" (default), which uses specialized algorithm
+(if supported), or "SGD" which uses generic Riemannian SGD}
 
 \item{tau}{step size}
 
-\item{tol}{convergence tolerance on the loss decrease}
+\item{tol}{covergence tolerance}
 
 \item{max.iter}{maximum number of iterations}
 
 \item{batch_size}{NULL for full-batch gradient descent; a value in (0, 1]
-for a proportion of the data; a value > 1 for an absolute subsample
-count (stochastic gradient descent, with tau decaying as tau / sqrt(iter))}
+for a proportion of the data; a value > 1 for an absolute subsample count
+(stochastic gradient descent, with tau decaying as tau / sqrt(iter))}
 
 \item{init}{optional initial value; if NULL a random data point is used}
 
 \item{verbose}{if TRUE, print the loss at each iteration}
 }
 \value{
-the estimated Frechet mean, a single point on the manifold
+the estimated Fréchet mean, a single point on the manifold
 }
 \description{
-A single generic implementation shared by all manifolds: at each
-iteration, average the Log-mapped tangent vectors of a (sub)sample of the
-data at the current estimate, take an Exp step in that direction, and
-stop once the drop in average geodesic distance falls below `tol`.
+A generic
 }
 \examples{
-set.seed(1)
-mfd = manifold_sphere()
+mfd = manifold_BWS()
+x = array(NA, dim = c(10, 3, 3))
+for (i in 1:10) x[i,,] = crossprod(matrix(rnorm(9), ncol = 3)) + diag(0.1, 3)
+frechet_mean(mfd, x, verbose = TRUE)
+frechet_mean(mfd, x, method = "SGD", verbose = TRUE)
 
-# 30 points scattered around c(1, 0, 0) on the unit sphere in R^3
-X = matrix(rnorm(30 * 3), 30, 3)
-X[, 1] = X[, 1] + 4
-X = X / sqrt(rowSums(X^2))
-
-mu_hat = frechet_mean(mfd, X)
-mu_hat
-
-# stochastic gradient descent on a subsample each iteration
-frechet_mean(mfd, X, batch_size = 10, verbose = FALSE)
 }

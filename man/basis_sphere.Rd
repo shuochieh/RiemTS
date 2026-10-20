@@ -10,11 +10,12 @@ basis_sphere(mu)
 \item{mu}{base point on the sphere}
 }
 \value{
-a (d by d-1) matrix whose columns form an orthonormal basis of the tangent space at `mu`
+a (d-1 by d) matrix whose rows form an orthonormal basis of the tangent space at \code{mu}
 }
 \description{
 A basis for the tangent space at mu (sphere)
 }
 \examples{
 basis_sphere(c(1, 0, 0))
+
 }

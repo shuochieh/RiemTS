@@ -2,8 +2,8 @@ library(expm)
 
 #' Geodesic distance between two (arrays of) points on the Log-Euclidean space
 #' 
-#' @param x an $(m \times m)$ or $(n by m by m)$ array of SPD matrix
-#' @param y an $(m \times m)$ or $(n by m by m)$ array of SPD matrix
+#' @param x an \eqn{m \times m} or \eqn{n \times m \times m} array of SPD matrix
+#' @param y an \eqn{m \times m} or \eqn{n \times m \times m} array of SPD matrix
 #' 
 #' @examples 
 #' x = crossprod(matrix(rnorm(9), 3, 3)) + diag(0.1, 3)
@@ -128,8 +128,8 @@ first_diff_ratio = function (a, type = "exp", tol = 1e-5) {
 #' Differentials of the matrix exp and log
 #' Computes Dexp_P(Q) or Dlog_P(Q)
 #' 
-#' @param P an $m \times m$ (SPD) matrix (base)
-#' @param Q an $m \times m$ matrix
+#' @param P an \eqn{m \times m} (SPD) matrix (base)
+#' @param Q an \eqn{m \times m} matrix
 #' @param type either "exp" or "log"
 #' 
 #' @export
@@ -151,8 +151,8 @@ diff_explog = function (P, Q, type = "exp") {
 
 #' Exponential map on the log-Euclidean geometry
 #' 
-#' @param z an $m \times m$  or $n \times m \times m$ array of tangent vectors (identified as symmetric matrices)
-#' @param x an $m \times m$ SPD matrix (as the base point)
+#' @param z an \eqn{m \times m}  or \eqn{n \times m \times m} array of tangent vectors (identified as symmetric matrices)
+#' @param x an \eqn{m \times m} SPD matrix (as the base point)
 #' 
 #' @examples 
 #' x = crossprod(matrix(rnorm(9), 3, 3)) + diag(0.1, 3)
@@ -459,7 +459,7 @@ Hessian.manifold_logE = function (mfd, p, x, V, ...) {
 #' @param method either "specialized" (default), which uses specialized algorithm
 #'               for log-Euclidean geometry, or "SGD" which uses generic Riemannian
 #'               SGD
-#' @return the Fréchet mean, as an \eqm{m \times m} matrix 
+#' @return the Fréchet mean, as an \eqn{m \times m} matrix 
 #' 
 #' @examples 
 #' mfd = manifold_logE()
