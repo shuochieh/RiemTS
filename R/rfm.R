@@ -138,10 +138,13 @@ predict.factor_model = function (model, newdata) {
 #'   Huang, S.-C., Chen, R., & Chen, Y. (2026). 
 #'   A Riemannian Factor Model for Manifold-Valued Time Series. 
 #'   arXiv preprint arXiv:2607.28385.
-#' @examples 
-#' 
-#' TBA
-#' 
+#' @examples
+#' # compositional data mapped onto the sphere via the square-root transform
+#' data(CaliforniaRain)
+#' x = sqrt(CaliforniaRain)
+#' fit = rfm(manifold_sphere(), x, r = 2)
+#' dim(fit$f_hat)
+#'
 #' @export
 rfm = function (mfd, x, r = NULL, h = 1, mu = NULL, basis = NULL, demean = TRUE, 
                 R = NULL, frechet_mean_args = list(), log_args = list()) {

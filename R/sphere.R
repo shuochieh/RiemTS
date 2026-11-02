@@ -40,7 +40,7 @@ is_on_sphere = function(x, tol = 1e-6) {
 #' 
 #' @param x an \eqn{n \times q} array of points or a \eqn{q}-dimensional vector
 #' @param y an \eqn{n \times q} array of points or a \eqn{q}-dimensional vector
-#' @tol tolerance in checking sphere membership
+#' @param tol tolerance in checking sphere membership
 #' 
 #' @examples 
 #' x = matrix(c(1,0,0,1,0,0), ncol = 3)

@@ -207,7 +207,7 @@ ZZS_WBS_thres_sim = function (n, U, alpha = 0.05, J = 500, b = 0.15) {
 #' 
 #' U = WBS_intervals(n = 200, M = 15) # generating random intervals
 #' thres = ZZS_WBS_thres_sim(n = 200, U = U, alpha = 0.05) # simulate threshold
-#' point = ZZS_WBS(mfd, x, U, thres = thres) # Run WBS to get the break locations
+#' points = ZZS_WBS(mfd, x, U, thres = thres) # Run WBS to get the break locations
 #' print(points) # expected to detect near location 100
 #' 
 #' @export
