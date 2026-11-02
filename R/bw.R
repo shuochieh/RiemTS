@@ -47,7 +47,7 @@ fast_lyapunov <- function(A, Q, P_coordinate = TRUE) {
 #' Geodesic distance between two SPD matrices in Bures--Wasserstein
 #'
 #' @noRd
-geod_BWS_core <- function(x, y) {
+geod_BW_core <- function(x, y) {
   # drop unnecessary dimension
   if (length(dim(x)) == 3 && dim(x)[1] == 1) {
     x <- x[1, , ]
@@ -75,16 +75,16 @@ geod_BWS_core <- function(x, y) {
 #' @examples
 #' x <- crossprod(matrix(rnorm(9), 3, 3)) + diag(0.1, 3)
 #' y <- crossprod(matrix(rnorm(9), 3, 3)) + diag(0.1, 3)
-#' geod_BWS(x, y)
+#' geod_BW(x, y)
 #'
 #' @export
-geod_BWS <- function(x, y) {
+geod_BW <- function(x, y) {
   if (length(dim(x)) == 3) {
     nx <- dim(x)[1]
   } else if (length(dim(x)) == 2) {
     nx <- 1
   } else {
-    stop("geod_BWS: input array dimension must be 2 or 3.")
+    stop("geod_BW: input array dimension must be 2 or 3.")
   }
   mx <- dim(x)[2]
 
@@ -93,35 +93,35 @@ geod_BWS <- function(x, y) {
   } else if (length(dim(y)) == 2) {
     ny <- 1
   } else {
-    stop("geod_BWS: input array dimension must be 2 or 3.")
+    stop("geod_BW: input array dimension must be 2 or 3.")
   }
   my <- dim(y)[2]
 
   if (nx != 1 && ny != 1 && nx != ny) {
-    stop("geod_BWS: number of input matrices must match or equal to 1; otherwise broadcasting is undefined.")
+    stop("geod_BW: number of input matrices must match or equal to 1; otherwise broadcasting is undefined.")
   }
   if (mx != my) {
-    stop("geod_BWS: input matrix dimensions must match.")
+    stop("geod_BW: input matrix dimensions must match.")
   }
 
   m <- mx
 
   if (nx == 1 && ny == 1) {
-    return(geod_BWS_core(x, y))
+    return(geod_BW_core(x, y))
   } else if (nx == 1) {
     res <- rep(NA, ny)
     for (i in 1:ny) {
-      res[i] <- geod_BWS_core(x, y[i, , ])
+      res[i] <- geod_BW_core(x, y[i, , ])
     }
   } else if (ny == 1) {
     res <- rep(NA, nx)
     for (i in 1:nx) {
-      res[i] <- geod_BWS_core(x[i, , ], y)
+      res[i] <- geod_BW_core(x[i, , ], y)
     }
   } else {
     res <- rep(NA, nx)
     for (i in 1:nx) {
-      res[i] <- geod_BWS_core(x[i, , ], y[i, , ])
+      res[i] <- geod_BW_core(x[i, , ], y[i, , ])
     }
   }
 
@@ -130,14 +130,14 @@ geod_BWS <- function(x, y) {
 
 #' @rdname geod
 #' @export
-geod.manifold_BWS <- function(mfd, x, y, ...) {
-  geod_BWS(x, y)
+geod.manifold_BW <- function(mfd, x, y, ...) {
+  geod_BW(x, y)
 }
 
 #' Exponential map on the Bures--Wasserstein geometry
 #'
 #' @noRd
-Exp_BWS_core <- function(z, x) {
+Exp_BW_core <- function(z, x) {
   if (length(dim(x)) == 3 && dim(x)[1] == 1) {
     x <- x[1, , ]
   }
@@ -158,10 +158,10 @@ Exp_BWS_core <- function(z, x) {
 #' @examples
 #' x <- crossprod(matrix(rnorm(9), 3, 3)) + diag(0.1, 3)
 #' z <- crossprod(matrix(rnorm(9), 3, 3)) * 0.1
-#' Exp_BWS(z, x)
+#' Exp_BW(z, x)
 #'
 #' @export
-Exp_BWS <- function(z, x) {
+Exp_BW <- function(z, x) {
   if (length(dim(z)) == 3) {
     n <- dim(z)[1]
     was_matrix <- FALSE
@@ -170,17 +170,17 @@ Exp_BWS <- function(z, x) {
     z <- array(z, dim = c(1, dim(z)))
     was_matrix <- TRUE
   } else {
-    stop("Exp_BWS: number of dimensions of z must be either 2 or 3.")
+    stop("Exp_BW: number of dimensions of z must be either 2 or 3.")
   }
 
   m <- dim(z)[2]
   if (dim(z)[3] != m || !all(dim(x) == c(m, m))) {
-    stop("Exp_BWS: input matrix dimension must match (m x m).")
+    stop("Exp_BW: input matrix dimension must match (m x m).")
   }
 
   res <- array(NA, dim = c(n, m, m))
   for (i in 1:n) {
-    res[i, , ] <- Exp_BWS_core(z = z[i, , ], x = x)
+    res[i, , ] <- Exp_BW_core(z = z[i, , ], x = x)
   }
   if (was_matrix) {
     res <- res[1, , ]
@@ -190,14 +190,14 @@ Exp_BWS <- function(z, x) {
 }
 
 #' @export
-Exp_mfd.manifold_BWS <- function(mfd, p, v, ...) {
-  Exp_BWS(z = v, x = p)
+Exp_mfd.manifold_BW <- function(mfd, p, v, ...) {
+  Exp_BW(z = v, x = p)
 }
 
 #' Logarithm map on the Bures--Wasserstein geometry
 #'
 #' @noRd
-Log_BWS_core <- function(x, y, check_cut = FALSE) {
+Log_BW_core <- function(x, y, check_cut = FALSE) {
   if (length(dim(x)) == 3 && dim(x)[1] == 1) {
     x <- x[1, , ]
   }
@@ -208,7 +208,7 @@ Log_BWS_core <- function(x, y, check_cut = FALSE) {
     test_y <- test_y + diag(1, nrow(y))
     eig <- eigen(test_y, symmetric = T, only.values = T)$values
     if (!all(eig > 0)) {
-      stop("Log_BWS_core: y outside injectivity radius")
+      stop("Log_BW_core: y outside injectivity radius")
     }
   }
 
@@ -227,10 +227,10 @@ Log_BWS_core <- function(x, y, check_cut = FALSE) {
 #' @examples
 #' x <- crossprod(matrix(rnorm(9), 3, 3)) + diag(1, 3)
 #' y <- crossprod(matrix(rnorm(9), 3, 3)) + diag(1, 3)
-#' Log_BWS(x, y)
+#' Log_BW(x, y)
 #'
 #' @export
-Log_BWS <- function(x, y, check_cut = FALSE) {
+Log_BW <- function(x, y, check_cut = FALSE) {
   if (length(dim(y)) == 3) {
     n <- dim(y)[1]
     was_matrix <- FALSE
@@ -239,17 +239,17 @@ Log_BWS <- function(x, y, check_cut = FALSE) {
     y <- array(y, dim = c(1, dim(y)))
     was_matrix <- TRUE
   } else {
-    stop("Log_BWS: number of dimensions of y must be either 2 or 3.")
+    stop("Log_BW: number of dimensions of y must be either 2 or 3.")
   }
 
   m <- dim(y)[2]
   if (dim(y)[3] != m || !all(dim(x) == c(m, m))) {
-    stop("Log_BWS: input matrix dimension must match (m x m).")
+    stop("Log_BW: input matrix dimension must match (m x m).")
   }
 
   res <- array(NA, dim = c(n, m, m))
   for (i in 1:n) {
-    res[i, , ] <- Log_BWS_core(x = x, y = y[i, , ])
+    res[i, , ] <- Log_BW_core(x = x, y = y[i, , ])
   }
   if (was_matrix) {
     res <- res[1, , ]
@@ -260,12 +260,12 @@ Log_BWS <- function(x, y, check_cut = FALSE) {
 
 #' @rdname Log_mfd
 #' @export
-Log_mfd.manifold_BWS <- function(mfd, p, q, ...) {
-  Log_BWS(x = p, y = q, ...)
+Log_mfd.manifold_BW <- function(mfd, p, q, ...) {
+  Log_BW(x = p, y = q, ...)
 }
 
 #' @noRd
-Christoffel_BWS_core <- function(Sigma, X, Y) {
+Christoffel_BW_core <- function(Sigma, X, Y) {
   Lx <- lyapunov(Sigma, X)
   Ly <- lyapunov(Sigma, Y)
 
@@ -276,7 +276,7 @@ Christoffel_BWS_core <- function(Sigma, X, Y) {
 }
 
 #' @noRd
-Christoffel_BWS <- function(t, U, param) {
+Christoffel_BW <- function(t, U, param) {
   Sigma1 <- param$Sigma1
   Sigma2 <- param$Sigma2
   p <- dim(Sigma1)[1]
@@ -290,7 +290,7 @@ Christoffel_BWS <- function(t, U, param) {
   Sigma_t <- (1 - t)^2 * Sigma1 + t^2 * Sigma2 + t * (1 - t) * (A + B)
   Sigma_dot <- -2 * Sigma1 + A + B + 2 * t * (Sigma1 + Sigma2 - A - B)
 
-  res <- -as.vector(Christoffel_BWS_core(Sigma_t, Sigma_dot, U))
+  res <- -as.vector(Christoffel_BW_core(Sigma_t, Sigma_dot, U))
   return(list(res))
 }
 
@@ -301,13 +301,13 @@ Christoffel_BWS <- function(t, U, param) {
 #' @param V tangent vector, identified as a symmetric matrix, at the starting point
 #'
 #' @noRd
-pt_bws_core <- function(Sigma1, Sigma2, V, method = "adams") {
+pt_BW_core <- function(Sigma1, Sigma2, V, method = "adams") {
   p <- dim(Sigma1)[1]
   times <- seq(0, 1, length.out = 101)
   sol <- ode(
     y = as.vector(V),
     times = times,
-    func = Christoffel_BWS,
+    func = Christoffel_BW,
     parms = list("Sigma1" = Sigma1, "Sigma2" = Sigma2),
     method = method
   )
@@ -328,10 +328,10 @@ pt_bws_core <- function(Sigma1, Sigma2, V, method = "adams") {
 #' q <- crossprod(matrix(rnorm(9), ncol = 3)) + diag(1, 3)
 #' v <- matrix(rnorm(9), ncol = 3)
 #' v <- 0.5 * (v + t(v))
-#' pt_BWS(p, q, v)
+#' pt_BW(p, q, v)
 #'
 #' @export
-pt_BWS <- function(p, q, x, method = "adams") {
+pt_BW <- function(p, q, x, method = "adams") {
   if (length(dim(x)) == 3) {
     n <- dim(x)[1]
     was_matrix <- FALSE
@@ -340,13 +340,13 @@ pt_BWS <- function(p, q, x, method = "adams") {
     x <- array(x, dim = c(1, dim(x)))
     was_matrix <- TRUE
   } else {
-    stop("pt_BWS: number of dimensions of x must be either 2 or 3.")
+    stop("pt_BW: number of dimensions of x must be either 2 or 3.")
   }
 
   m <- dim(x)[2]
   res <- array(NA, dim = c(n, m, m))
   for (i in 1:n) {
-    res[i, , ] <- pt_bws_core(Sigma1 = p, Sigma2 = q, V = x[i, , ], method = method)
+    res[i, , ] <- pt_BW_core(Sigma1 = p, Sigma2 = q, V = x[i, , ], method = method)
   }
   if (was_matrix) {
     res <- res[1, , ]
@@ -357,8 +357,8 @@ pt_BWS <- function(p, q, x, method = "adams") {
 
 #' @rdname ptransport
 #' @export
-ptransport.manifold_BWS <- function(mfd, from, to, v, ...) {
-  pt_BWS(p = from, q = to, x = V, ...)
+ptransport.manifold_BW <- function(mfd, from, to, v, ...) {
+  pt_BW(p = from, q = to, x = v, ...)
 }
 
 #' A basis for the tangent space at p (SPD matrix in the Bures--Wasserstein geometry)
@@ -367,10 +367,10 @@ ptransport.manifold_BWS <- function(mfd, from, to, v, ...) {
 #'
 #' @examples
 #' p <- crossprod(matrix(rnorm(9), ncol = 3)) + diag(1, 3)
-#' basis_BWS(p)
+#' basis_BW(p)
 #'
 #' @export
-basis_BWS <- function(p) {
+basis_BW <- function(p) {
   d <- dim(p)[1]
 
   model <- eigen(p)
@@ -400,8 +400,8 @@ basis_BWS <- function(p) {
 
 #' @rdname basis
 #' @export
-basis.manifold_BWS <- function(mfd, p, ...) {
-  basis_BWS(p)
+basis.manifold_BW <- function(mfd, p, ...) {
+  basis_BW(p)
 }
 
 #' Evaluate the Riemannian metric at p (Bures--Wasserstein)
@@ -414,11 +414,11 @@ basis.manifold_BWS <- function(mfd, p, ...) {
 #'
 #' @examples
 #' X <- crossprod(matrix(rnorm(9), ncol = 3)) + diag(1, 3)
-#' B <- basis_BWS(X)
-#' Riem_metric_BWS(X, B, B[1, , ])
+#' B <- basis_BW(X)
+#' Riem_metric_BW(X, B, B[1, , ])
 #'
 #' @export
-Riem_metric_BWS <- function(p, v, w) {
+Riem_metric_BW <- function(p, v, w) {
   dim_v <- dim(v)
   dim_w <- dim(w)
 
@@ -429,7 +429,7 @@ Riem_metric_BWS <- function(p, v, w) {
   } else if (length(dim_v) == 3) {
     n_v <- dim_v[1]
   } else {
-    stop("Riem_metric_BWS: dimension of v must be 2 or 3.")
+    stop("Riem_metric_BW: dimension of v must be 2 or 3.")
   }
 
   # Format w
@@ -439,7 +439,7 @@ Riem_metric_BWS <- function(p, v, w) {
   } else if (length(dim_w) == 3) {
     n_w <- dim_w[1]
   } else {
-    stop("Riem_metric_BWS: dimension of w must be 2 or 3.")
+    stop("Riem_metric_BW: dimension of w must be 2 or 3.")
   }
 
   if (n_v != n_w) {
@@ -452,7 +452,7 @@ Riem_metric_BWS <- function(p, v, w) {
       w <- aperm(w, c(3, 1, 2))
       n <- n_v
     } else {
-      stop("Riem_metric_BWS: number of tangent vectors in v and w must match or be 1.")
+      stop("Riem_metric_BW: number of tangent vectors in v and w must match or be 1.")
     }
   } else {
     n <- n_v
@@ -460,7 +460,7 @@ Riem_metric_BWS <- function(p, v, w) {
 
   m <- dim(p)[1]
   if (length(dim(p)) != 2 || dim(p)[2] != m || dim(v)[2] != m || dim(v)[3] != m) {
-    stop("Riem_metric_BWS: input matrix dimensions must match (m x m).")
+    stop("Riem_metric_BW: input matrix dimensions must match (m x m).")
   }
 
   # --- Computation ---
@@ -492,8 +492,8 @@ Riem_metric_BWS <- function(p, v, w) {
 
 #' @rdname Riem_metric
 #' @export
-Riem_metric.manifold_BWS <- function(mdf, p, v, w, ...) {
-  Riem_metric_BWS(p = p, v = v, w = w)
+Riem_metric.manifold_BW <- function(mdf, p, v, w, ...) {
+  Riem_metric_BW(p = p, v = v, w = w)
 }
 
 #' Compute the Riemannian Hessian vector action \eqn{H[v]} on the Bures--Wasserstein geometry
@@ -524,11 +524,11 @@ Riem_metric.manifold_BWS <- function(mdf, p, v, w, ...) {
 #' @examples
 #' x <- crossprod(matrix(rnorm(9), 3, 3)) + diag(1, 3)
 #' p <- crossprod(matrix(rnorm(9), 3, 3)) + diag(1, 3)
-#' V <- basis_BWS(x)
-#' Hess_BWS(x, p, V)
+#' V <- basis_BW(x)
+#' Hess_BW(x, p, V)
 #'
 #' @export
-Hess_BWS <- function(x, p, V) {
+Hess_BW <- function(x, p, V) {
   if (length(dim(V)) == 3) {
     n <- dim(V)[1]
     was_matrix <- FALSE
@@ -537,12 +537,12 @@ Hess_BWS <- function(x, p, V) {
     V <- array(V, dim = c(1, dim(V)))
     was_matrix <- TRUE
   } else {
-    stop("Hess_BWS: number of dimensions of V must be either 2 or 3.")
+    stop("Hess_BW: number of dimensions of V must be either 2 or 3.")
   }
 
   m <- dim(V)[2]
   if (dim(V)[3] != m || !all(dim(x) == c(m, m)) || !all(dim(p) == c(m, m))) {
-    stop("Hess_BWS: input matrix dimension must match (m x m).")
+    stop("Hess_BW: input matrix dimension must match (m x m).")
   }
 
   sym <- function(A) 0.5 * (A + t(A))
@@ -586,8 +586,8 @@ Hess_BWS <- function(x, p, V) {
 
 #' @rdname Hessian
 #' @export
-Hessian.manifold_BWS <- function(mfd, p, x, V, ...) {
-  Hess_BWS(x = x, p = p, V = V)
+Hessian.manifold_BW <- function(mfd, p, x, V, ...) {
+  Hess_BW(x = x, p = p, V = V)
 }
 
 
@@ -604,7 +604,7 @@ Hessian.manifold_BWS <- function(mfd, p, x, V, ...) {
 #' @return the Fréchet mean, as an \eqn{m \times m} matrix
 #'
 #' @examples
-#' mfd <- manifold_BWS()
+#' mfd <- manifold_BW()
 #' x <- array(NA, dim = c(10, 3, 3))
 #' for (i in 1:10) x[i, , ] <- crossprod(matrix(rnorm(9), ncol = 3)) + diag(0.1, 3)
 #' frechet_mean(mfd, x, verbose = TRUE)
@@ -616,7 +616,7 @@ Hessian.manifold_BWS <- function(mfd, p, x, V, ...) {
 #'  \emph{Journal of Mathematical Analysis and Applications}, 441(2), 744--762.
 #'
 #' @export
-frechet_mean.manifold_BWS <- function(mfd, x, method = c("specialized", "SGD"),
+frechet_mean.manifold_BW <- function(mfd, x, method = c("specialized", "SGD"),
                                       max.iter = 100, tol = 1e-4, verbose = FALSE,
                                       ...) {
   method <- match.arg(method)
@@ -679,7 +679,7 @@ frechet_mean.manifold_BWS <- function(mfd, x, method = c("specialized", "SGD"),
 
 #' @rdname tangent_to_vec
 #' @export
-tangent_to_vec.manifold_BWS <- function(mfd, v, p, E, ...) {
+tangent_to_vec.manifold_BW <- function(mfd, v, p, E, ...) {
   mfd_dim <- dim(E)[1]
   d <- dim(E)[2]
   if (is.matrix(v)) {
@@ -692,7 +692,7 @@ tangent_to_vec.manifold_BWS <- function(mfd, v, p, E, ...) {
   }
 
 
-  # Computing coordinate values using Riem_metric (or Riem_metric_BWS) can be
+  # Computing coordinate values using Riem_metric (or Riem_metric_BW) can be
   # too slow for large dimensional matrix. Here we employ a trick
   base_eigen <- eigen(p, symmetric = TRUE)
   P <- base_eigen$vectors
@@ -738,7 +738,7 @@ tangent_to_vec.manifold_BWS <- function(mfd, v, p, E, ...) {
 
 #' @rdname vec_to_tangent
 #' @export
-vec_to_tangent.manifold_BWS <- function(mfd, v_coord, p, E, ...) {
+vec_to_tangent.manifold_BW <- function(mfd, v_coord, p, E, ...) {
   if (is.vector(v_coord)) {
     n_v <- 1
     v_coord <- matrix(v_coord, nrow = 1)

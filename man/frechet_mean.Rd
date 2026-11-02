@@ -35,7 +35,7 @@ the estimated Fréchet mean, a single point on the manifold
 A generic
 }
 \examples{
-mfd = manifold_BWS()
+mfd = manifold_BW()
 x = array(NA, dim = c(10, 3, 3))
 for (i in 1:10) x[i,,] = crossprod(matrix(rnorm(9), ncol = 3)) + diag(0.1, 3)
 frechet_mean(mfd, x, verbose = TRUE)

@@ -11,7 +11,7 @@ Supported manifolds:
 
 | Manifold | Constructor |
 |---|---|
-| Bures–Wasserstein (SPD matrices) | `manifold_BWS()` |
+| Bures–Wasserstein (SPD matrices) | `manifold_BW()` |
 | Log-Euclidean (SPD matrices) | `manifold_logE()` |
 | Sphere | `manifold_sphere()` |
 | Grassmannian (in progress) | `manifold_grassmann()` |
@@ -33,7 +33,7 @@ geometry works for another by swapping the manifold object.
 ```r
 library(RiemTS)
 
-mfd <- manifold_BWS()
+mfd <- manifold_BW()
 
 # two 3 x 3 SPD matrices
 x <- crossprod(matrix(rnorm(9), 3, 3)) + diag(1, 3)
@@ -79,7 +79,7 @@ fit$E_val        # eigenvalues used to choose the number of factors
 
 - [x] **Version 1**
   - [x] Double-check the Hessian in Log-Euclidean
-- [ ] General-purpose Hessian approximation, and specialized formula for BWS
+- [ ] General-purpose Hessian approximation, and specialized formula for BW
 - [ ] Manifold operations for the Grassmannian
 - [ ] General-purpose MOSUM and CUSUM tests/detection
   - This step involves many tuning details

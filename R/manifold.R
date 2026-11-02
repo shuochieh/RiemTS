@@ -21,10 +21,10 @@ manifold_sphere = function() {
 #' Construct a manifold object. Points on this manifold are symmetric 
 #' positive-definite (m by m) matrices.
 #'
-#' @return an object of class `c("manifold_BWS", "manifold")`
+#' @return an object of class `c("manifold_BW", "manifold")`
 #' @export
-manifold_BWS = function() {
-  structure(list(point_ndim = 2), class = c("manifold_BWS", "manifold"))
+manifold_BW = function() {
+  structure(list(point_ndim = 2), class = c("manifold_BW", "manifold"))
 }
 
 #' Log-Euclidean manifold of SPD matrices
@@ -79,7 +79,7 @@ subset_points = function (mfd, x, idx) {
 
 #' Geodesic distance on a manifold
 #' 
-#' Works identically for [manifold_sphere()], [manifold_BWS()],  
+#' Works identically for [manifold_sphere()], [manifold_BW()],  
 #' [manifold_logEuclidean()], and [manifold_grassmann()] objects, and for any 
 #' combination of single points and batches of points (an (n by ...) array/matrix) 
 #' in `x` and `y`.

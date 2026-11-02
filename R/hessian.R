@@ -10,7 +10,7 @@
 #' @param ... additional arguments passed to methods
 #'
 #' @examples
-#' mfd <- manifold_BWS()
+#' mfd <- manifold_BW()
 #' x <- crossprod(matrix(rnorm(9), 3, 3)) + diag(1, 3)
 #' p <- crossprod(matrix(rnorm(9), 3, 3)) + diag(1, 3)
 #' V <- basis(mfd, x)
